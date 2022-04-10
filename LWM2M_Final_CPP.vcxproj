@@ -139,7 +139,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="LWM2M_Final_CPP.cpp" />
+    <ClCompile Include="LWM2M_Client.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="PerformaceTimer.cpp" />
+    <ClCompile Include="userInput.cpp" />
+    <ClCompile Include="Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LWM2M_Client.h" />
+    <ClInclude Include="PerformanceTimer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
