@@ -1,12 +1,12 @@
-#ifndef UTILS_CPP
-#define UTILS_CPP
+#include "Utils.h"
 
 #include <iostream>
 #include <sstream>
+#include <WS2tcpip.h>
 
 
 
-static bool isInteger(std::string str) {
+bool isInteger(std::string str) {
     if (str == "") {
         return false;
     }
@@ -30,7 +30,7 @@ static bool isInteger(std::string str) {
     return true;
 }
 
-static bool isFloat(std::string str) {
+bool isFloat(std::string str) {
     if (str == "") {
         return false;
     }
@@ -54,7 +54,7 @@ static bool isFloat(std::string str) {
     return true;
 }
 
-static bool isIntegerStd(std::string str)
+bool isIntegerStd(std::string str)
 {
     for (char const& c : str) {
         if (std::isdigit(c) == 0) return false;
@@ -62,7 +62,7 @@ static bool isIntegerStd(std::string str)
     return true;
 }
 
-static bool isFloatStd(std::string str)
+bool isFloatStd(std::string str)
 {
     for (char const& c : str) {
         if (!std::isdigit(c))
@@ -74,5 +74,45 @@ static bool isFloatStd(std::string str)
     return true;
 }
 
+void destroySocket(SOCKET& socket)
+{
+    closesocket(socket);
+    WSACleanup();
+}
 
-#endif // UTILS_CPP
+
+int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocket)
+{
+    WSAData data;
+    WORD ver = MAKEWORD(2, 2);
+    int wsResult = WSAStartup(ver, &data);
+    if (wsResult != 0) {
+        std::cerr << "ERR" << wsResult << std::endl;
+        return 0;
+    }
+
+    outSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (outSocket == INVALID_SOCKET) {
+        std::cerr << "Cannot create socket #" << WSAGetLastError << std::endl;
+        WSACleanup();
+        return 0;
+    }
+
+    DWORD timeout = tout * 1000;
+    setsockopt(outSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
+
+    sockaddr_in hint;
+    hint.sin_family = AF_INET;
+    hint.sin_port = htons(port);
+    inet_pton(AF_INET, ipAddress.c_str(), &hint.sin_addr);
+
+    int connResult = connect(outSocket, (sockaddr*)&hint, sizeof(hint));
+    if (connResult == SOCKET_ERROR) {
+        std::cerr << "Error " << WSAGetLastError << std::endl;
+        destroySocket(outSocket);
+        return 0;
+    }
+    return 1;
+}
+

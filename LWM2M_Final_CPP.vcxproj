@@ -148,6 +148,7 @@
   <ItemGroup>
     <ClInclude Include="LWM2M_Client.h" />
     <ClInclude Include="PerformanceTimer.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

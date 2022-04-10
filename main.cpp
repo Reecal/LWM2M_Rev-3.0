@@ -14,7 +14,7 @@
 #include <sstream>
 #include <chrono>
 
-#include "Utils.cpp"
+#include "Utils.h"
 #include "LWM2M_Client.h"
 #include "PerformanceTimer.h"
 #include "userInput.cpp"
@@ -29,60 +29,29 @@ static bool isFinishedApp = false;
 static bool applicationRunApp = true;
 
 
-int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocket);
-void destroySocket(SOCKET& socket);
+/*int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocket);
+void destroySocket(SOCKET& socket);*/
 
 int main()
 {
     LWM2M_Client client;
 	std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
 
-	std::cout << "Hello World!\n";
+    SOCKET s;
+
+    std::string ipAddr = "192.168.204.128";
+    int port = 5683;
+    const std::string epName = "C++_123";
+
+
+    initializeSocket(ipAddr, port, 5, s);
+
+	std::cout << "Socket Initialized\n";
+
+    //send(s, "Hello", 5, 0);
     
     while (applicationRunApp);
 
     userInterfaceThread.join();
    
-}
-
-
-int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocket)
-{
-    WSAData data;
-    WORD ver = MAKEWORD(2, 2);
-    int wsResult = WSAStartup(ver, &data);
-    if (wsResult != 0) {
-        std::cerr << "ERR" << wsResult << std::endl;
-        return 0;
-    }
-
-    outSocket = socket(AF_INET, SOCK_DGRAM, 0);
-
-    if (outSocket == INVALID_SOCKET) {
-        std::cerr << "Cannot create socket #" << WSAGetLastError << std::endl;
-        WSACleanup();
-        return 0;
-    }
-
-    DWORD timeout = tout * 1000;
-    setsockopt(outSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
-
-    sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    inet_pton(AF_INET, ipAddress.c_str(), &hint.sin_addr);
-
-    int connResult = connect(outSocket, (sockaddr*)&hint, sizeof(hint));
-    if (connResult == SOCKET_ERROR) {
-        std::cerr << "Error " << WSAGetLastError << std::endl;
-        destroySocket(outSocket);
-        return 0;
-    }
-    return 1;
-}
-
-void destroySocket(SOCKET& socket)
-{
-    closesocket(socket);
-    WSACleanup();
 }

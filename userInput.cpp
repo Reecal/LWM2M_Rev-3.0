@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "LWM2M_Client.h"
-#include "Utils.cpp"
+#include "Utils.h"
 
 inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun) {
     {
