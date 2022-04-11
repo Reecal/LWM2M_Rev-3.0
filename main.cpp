@@ -43,12 +43,16 @@ int main()
     int port = 5683;
     const std::string epName = "C++_123";
 
+    std::string dat = "\x48\x02\x63\xc1\x08\x80\x6e\x17\x2e\xd0\x58\xe5\xb2rd\x11\x28\x33" \
+        "b=U\x09lwm2m=1.0\x06lt=100\x0d\x06"\
+        "ep=Reecal44CZESP-32\xff</>;ct=\"60 110 112 11542 11543\";rt=\"oma.lwm2m\",</1>;ver=1.1,</1/0>,</3>;ver=1.1,</3/0>,</6/0>,</3303>;ver=1.1,</3303/0>,</3441/0>";
+
 
     initializeSocket(ipAddr, port, 5, s);
 
 	std::cout << "Socket Initialized\n";
 
-    //send(s, "Hello", 5, 0);
+    send(s, dat.c_str(), dat.length(), 0);
     
     while (applicationRunApp);
 
