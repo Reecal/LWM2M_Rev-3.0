@@ -4,8 +4,9 @@
 
 //#define PSK
 
-#define TX_BUFFER_MAX_SIZE 0x08
-#define RX_BUFFER_MAX_SIZE 0x08
+//These must be multiples of 2 eg. 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 ....
+#define TX_BUFFER_MAX_SIZE 0x04
+#define RX_BUFFER_MAX_SIZE 0x04
 
 //#define AUTO_SEND //Whether message should be send automatically via provided send function.
 
@@ -13,7 +14,7 @@
 
 //Supported formats
 #define PLAIN_TEXT
-//#define JSON
+//#define JSON_OMA
 //#define TLV
 
 
@@ -25,7 +26,6 @@ enum LWM2M_Status
 	REGISTERED_IDLE,
 	REGISTERED_TX_DATA_READY,
 	REGISTERED_AWAIT_RESPONSE,
-
 };
 
 

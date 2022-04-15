@@ -33,10 +33,11 @@ static bool applicationRunApp = true;
 /*int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocket);
 void destroySocket(SOCKET& socket);*/
 void changeReference(const char*& ptr, const char* text);
+uint8_t rebootfunc(uint8_t d);
 
 int main()
 {
-    LWM2M_Client client;
+    LWM2M_Client client("RD_EP", rebootfunc);
 	std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
 
     SOCKET s;
@@ -96,4 +97,10 @@ int main()
 void changeReference(const char*& ptr, const char* text)
 {
     ptr = text;
+}
+
+uint8_t rebootfunc(uint8_t d)
+{
+    std::cout << "Reboot " << d << std::endl;
+    return 0;
 }
