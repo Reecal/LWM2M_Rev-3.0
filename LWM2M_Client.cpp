@@ -64,6 +64,16 @@ uint8_t LWM2M_Client::schedule_tx(char* data)
 	return 0;
 }
 
+void LWM2M_Client::register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len))
+{
+	send_cb = send_func;
+}
+
+void LWM2M_Client::send(char* data, uint16_t data_len)
+{
+	send_cb(data, data_len);
+}
+
 void LWM2M_Client::loop()
 {
 	

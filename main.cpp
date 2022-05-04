@@ -34,16 +34,20 @@ static bool applicationRunApp = true;
 void destroySocket(SOCKET& socket);*/
 void changeReference(const char*& ptr, const char* text);
 uint8_t rebootfunc(uint8_t d);
+uint8_t send_fc(char* data, uint16_t data_len);
+
+SOCKET s;
 
 int main()
 {
     LWM2M_Client client("RD_EP", rebootfunc);
+    client.register_send_callback(send_fc);
 	std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
 
-    SOCKET s;
+    
 
-    std::string ipAddr = "192.168.10.142";
-	//std::string ipAddr = "192.168.204.128";
+    //std::string ipAddr = "192.168.10.142";
+	std::string ipAddr = "192.168.204.128";
     int port = 5683;
     const std::string epName = "C++_123";
 
@@ -74,7 +78,8 @@ int main()
     {
         char* output;
         uint8_t response = client.getTxData(output);
-        send(s, output, strlen(output), 0);
+        //send(s, output, strlen(output), 0);
+        client.send(output, strlen(output));
        // send(s, , dat.length(), 0);
     }
        
@@ -104,4 +109,10 @@ uint8_t rebootfunc(uint8_t d)
 {
     std::cout << "Reboot " << d << std::endl;
     return 0;
+}
+
+uint8_t send_fc(char* data, uint16_t data_len)
+{
+    
+    return send(s, data, data_len, 0);
 }

@@ -6,7 +6,7 @@
 class LWM2M_Client
 {
 
-	
+private:
 	LWM2M_Status client_status = NOT_REGISTERED;
 	uint8_t flags = 0;
 
@@ -19,6 +19,7 @@ class LWM2M_Client
 	char* rxData[RX_BUFFER_MAX_SIZE] = {0};
 
 	uint8_t (*reboot_cb)(uint8_t);
+	uint8_t(*send_cb)(char* data, uint16_t data_len);
 	const char* endpoint_name;
 
 
@@ -28,6 +29,11 @@ public:
 	LWM2M_Status getStatus();
 	uint8_t getTxData(char*& outputBuffer);
 	uint8_t schedule_tx(char* data);
+
+	void register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len));
+
+	//temp
+	void send(char* data, uint16_t data_len);
 
 	void loop();
 
