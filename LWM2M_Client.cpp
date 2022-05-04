@@ -30,6 +30,8 @@
 #endif
 
 
+const char* lw_buffer;
+
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t)) : endpoint_name(ep_name), reboot_cb(reb)
 {
 	
@@ -96,14 +98,14 @@ uint8_t LWM2M_Client::schedule_tx(char* data)
 	return 0;
 }
 
-uint8_t LWM2M_Client::getRxData(char* outputBuffer)
+uint8_t LWM2M_Client::getRxData(const char*& outputBuffer)
 {
-	if (RX_FLAG) return NO_DATA_AVAILABLE;
+	if (!RX_FLAG) return NO_DATA_AVAILABLE;
 
 	outputBuffer = rxData[rxBuffer_tail];
 	rxBuffer_tail = (rxBuffer_tail + 1) & (RX_BUFFER_MAX_SIZE - 1);
 
-	if (rxBuffer_head == rxBuffer_tail) return CLEAR_RX_FLAG();
+	if (rxBuffer_head == rxBuffer_tail) CLEAR_RX_FLAG();
 
 	return 0;
 }
@@ -182,6 +184,23 @@ void LWM2M_Client::loop()
 		if (getRxData(lw_buffer) != NO_DATA_AVAILABLE)
 		{
 			//check if it's registration confirmation, otherwise drop
+			CoAP_Message_t message;
+			if (!CoAP_parse_message(&message, (char*) lw_buffer, strlen(lw_buffer))) //is valid coap message
+			{
+				if (message.header.type == COAP_ACK && message.header.returnCode == COAP_SUCCESS_CREATED)
+				{
+					for(uint8_t i = 0; i< message.options.options[1].option_length; i++)
+					{
+						reg_id[i] = message.options.options[1].option_value[i];
+					}
+					reg_id[message.options.options[1].option_length] = 0;
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
+					LOG_INFO("Registration succesful...");
+					LOG_INFO("Registration ID: " + std::string(reg_id));
+#endif
+				}
+
+			}
 		}
 		break;
 	default:

@@ -6,6 +6,13 @@
 class LWM2M_Client
 {
 
+	struct Data_In_t
+	{
+		char* data;
+		uint16_t data_length;
+	};
+
+
 private:
 	LWM2M_Status client_status = NOT_REGISTERED;
 	uint8_t flags = 0;
@@ -18,7 +25,7 @@ private:
 	//temp
 	uint16_t lifetime = 30;
 
-	char lw_buffer[1000];
+	
 
 	char* txData[TX_BUFFER_MAX_SIZE] = {0};
 	char* rxData[RX_BUFFER_MAX_SIZE] = {0};
@@ -26,10 +33,11 @@ private:
 	uint8_t (*reboot_cb)(uint8_t);
 	uint8_t(*send_cb)(char* data, uint16_t data_len);
 	const char* endpoint_name;
+	char reg_id[12];
 
 
 	uint8_t schedule_tx(char* data);
-	uint8_t getRxData(char* outputBuffer);
+	uint8_t getRxData(const char*& outputBuffer);
 	uint8_t send_registration();
 
 public:
