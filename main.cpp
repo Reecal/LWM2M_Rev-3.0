@@ -42,7 +42,8 @@ int main()
 
     SOCKET s;
 
-    std::string ipAddr = "192.168.204.128";
+    std::string ipAddr = "192.168.10.142";
+	//std::string ipAddr = "192.168.204.128";
     int port = 5683;
     const std::string epName = "C++_123";
 
