@@ -19,15 +19,30 @@
 #include "PerformanceTimer.h"
 #include "userInput.cpp"
 #include "LWM2M_Defines.h"
+#include "Logger_xdvora2g.h"
 
+//#define LOG_OUTPUT 1
 
-
+#if LOG_OUTPUT == 1
+//#define LOG_ENTITY "\x1B[34mMain\033[0m"
+#define LOG_ENTITY "\x1B[34mMain\033[0m"
+#define LOG_DATA(x,y)   LOG123(x, std::string(LOG_ENTITY), std::string(y))
+#define LOG_INFO(x)     LOG123(LOG_INFO_MESSAGE_TYPE, std::string(LOG_ENTITY), std::string(x))
+#define LOG_WARNING(x)  LOG123(LOG_WARNING_MESSAGE_TYPE, std::string(LOG_ENTITY), std::string(x))
+#define LOG_ERROR(x)    LOG123(LOG_ERROR_MESSAGE_TYPE, std::string(LOG_ENTITY), std::string(x))
+#else
+#define LOG_DATA(x, y) 
+#define LOG_INFO(x)
+#define LOG_WARNING(x)
+#define LOG_ERROR(x) 
+#endif
 
 
 #pragma comment(lib,"ws2_32.lib")
 
 static bool isFinishedApp = false;
 static bool applicationRunApp = true;
+extern bool main_loop_bool;
 
 
 /*int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocket);
@@ -42,8 +57,9 @@ int main()
 {
     LWM2M_Client client("RD_EP", rebootfunc);
     client.register_send_callback(send_fc);
-	std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
+	
 
+    LOG_INFO("Program start...");
     
 
     //std::string ipAddr = "192.168.10.142";
@@ -63,14 +79,15 @@ int main()
 
     initializeSocket(ipAddr, port, 5, s);
 
-	std::cout << "Socket Initialized\n" << dat.length() << std::endl;
+    LOG_INFO("Socket Initialized...");
+	//std::cout << "Socket Initialized\n" << dat.length() << std::endl;
 
-    const char* Ss = "Hello world!";
+    /*const char* Ss = "Hello world!";
     const char* Ll = "Notify me!";
 
     changeReference(Ss, Ll);
 
-    std::cout << Ss << " " << Ll << std::endl;
+    std::cout << Ss << " " << Ll << std::endl;*/
 
     //client.schedule_tx(dataChar);
 
@@ -84,7 +101,8 @@ int main()
     }*/
        
     
-    
+    main_loop_bool = true;
+    std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
     while (applicationRunApp)
     {
         char outputBuffer[1500];

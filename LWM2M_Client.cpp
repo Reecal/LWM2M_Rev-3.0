@@ -2,6 +2,10 @@
 
 #include <cstring>
 #include <string.h>
+#include "Logger_xdvora2g.h"
+
+
+#define LOG_VERBOSITY 3
 
 #define SET_TX_FLAG() LWM2M_Client::flags |= 0x01
 #define CLEAR_TX_FLAG() LWM2M_Client::flags &= ~0x01
@@ -10,6 +14,19 @@
 #define CLEAR_RX_FLAG() LWM2M_Client::flags &= ~0x02
 
 #define RX_FLAG		LWM2M_Client::flags & 0x02
+
+#if LOG_OUTPUT == 1
+#define LOG_ENTITY "\x1B[34mLWM2M_CLIENT\033[0m"
+#define LOG_DATA(x,y)   LOG123(x, std::string(LOG_ENTITY), std::string(y))
+#define LOG_INFO(x)     LOG123(LOG_INFO_MESSAGE_TYPE, std::string(LOG_ENTITY), std::string(x))
+#define LOG_WARNING(x)  LOG123(LOG_WARNING_MESSAGE_TYPE, std::string(LOG_ENTITY), std::string(x))
+#define LOG_ERROR(x)    LOG123(LOG_ERROR_MESSAGE_TYPE, std::string(LOG_ENTITY), std::string(x))
+#else
+#define LOG_DATA(x, y) 
+#define LOG_INFO(x)
+#define LOG_WARNING(x)
+#define LOG_ERROR(x) 
+#endif
 
 
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t)) : endpoint_name(ep_name), reboot_cb(reb)
@@ -49,7 +66,14 @@ uint8_t LWM2M_Client::getTxData(char*& outputBuffer)
 
 	if (txBuffer_head == txBuffer_tail) CLEAR_TX_FLAG();
 
-	if (client_status == REGISTRATION_SCHEDULED) client_status = AWAIT_REGISTRATION_RESPONSE;
+	if (client_status == REGISTRATION_SCHEDULED)
+	{
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=4
+		LOG_INFO("Registration request read from buffer...");
+#endif
+		client_status = AWAIT_REGISTRATION_RESPONSE;
+	}
+		
 
 	return 0;
 
@@ -102,11 +126,18 @@ uint8_t LWM2M_Client::send_registration()
 		"ep=Radim_DP__LWM2M1\xff</>;ct=\"60 110 112 11542 11543\";rt=\"oma.lwm2m\",</1>;ver=1.1,</1/0>,</3>;ver=1.1,</3/0>,</6/0>,</3303>;ver=1.1,</3303/0>,</3441/0>";
 
 #if defined(AUTO_SEND)
+	
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
+	LOG_INFO("Sending registration request...");
+#endif
+
 	client_status = AWAIT_REGISTRATION_RESPONSE;
 	return send(dataChar, strlen(dataChar));
-	
 #else
 	client_status = REGISTRATION_SCHEDULED;
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
+	LOG_INFO("Scheduling registration request...");
+#endif
 	return schedule_tx(dataChar);
 	
 #endif
