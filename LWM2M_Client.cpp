@@ -3,6 +3,7 @@
 #include <cstring>
 #include <string.h>
 #include "Logger_xdvora2g.h"
+#include "CoAP.hpp"
 
 
 #define LOG_VERBOSITY 3
@@ -121,9 +122,29 @@ uint8_t LWM2M_Client::send_registration()
 {
 	//temporary
 	//TODO Write proper registration function
-	char dataChar[] = "\x48\x02\x63\xc1\x08\x80\x6e\x17\x2e\xd0\x58\xe5\xb2rd\x11\x28\x33" \
+	/*char dataChar[] = "\x48\x02\x63\xc1\x08\x80\x6e\x17\x2e\xd0\x58\xe5\xb2rd\x11\x28\x33" \
 		"b=U\x09lwm2m=1.0\x06lt=100\x0d\x06"\
 		"ep=Radim_DP__LWM2M1\xff</>;ct=\"60 110 112 11542 11543\";rt=\"oma.lwm2m\",</1>;ver=1.1,</1/0>,</3>;ver=1.1,</3/0>,</6/0>,</3303>;ver=1.1,</3303/0>,</3441/0>";
+		*/
+
+	char payload[] = "</>;ct=\"60 11543\";rt=\"oma.lwm2m\",</1/0>,</3/0>,</6/0>,</3303>,</3303/0>,</3441/0>";
+
+	CoAP_message_t coap_message;
+	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_CONTENT_FORMAT, 0x28);
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "b=U");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lwm2m=1.0");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + to_string(lifetime));
+	char epname[30];
+	sprintf_s(epname, "ep=%s", endpoint_name);
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, epname);
+
+	CoAP_set_payload(&coap_message, payload);
+
+	//CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
+
+	CoAP_assemble_message(&coap_message);
 
 #if defined(AUTO_SEND)
 	
@@ -132,7 +153,8 @@ uint8_t LWM2M_Client::send_registration()
 #endif
 
 	client_status = AWAIT_REGISTRATION_RESPONSE;
-	return send(dataChar, strlen(dataChar));
+	//return send(dataChar, strlen(dataChar));
+	return send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);
 #else
 	client_status = REGISTRATION_SCHEDULED;
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3

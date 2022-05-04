@@ -105,14 +105,15 @@ int main()
     std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
     while (applicationRunApp)
     {
-        char outputBuffer[1500];
+        client.loop();
+    	char outputBuffer[1500];
 
         uint8_t num_bytes = recv(s, outputBuffer, 1500, 0);
         if (num_bytes > 0)
         {
             client.receive(outputBuffer, num_bytes);
         }
-        client.loop();
+        
     }
 
     userInterfaceThread.join();

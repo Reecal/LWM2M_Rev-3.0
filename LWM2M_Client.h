@@ -15,6 +15,9 @@ private:
 	uint8_t txBuffer_head = 0;
 	uint8_t txBuffer_tail = 0;
 
+	//temp
+	uint16_t lifetime = 30;
+
 	char lw_buffer[1000];
 
 	char* txData[TX_BUFFER_MAX_SIZE] = {0};
