@@ -100,7 +100,9 @@ int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocke
     }
 
     DWORD timeout = tout * 1000;
-    setsockopt(outSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
+    u_long mode = 1;
+    ioctlsocket(outSocket, FIONBIO, &mode);
+    //setsockopt(outSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
 
     sockaddr_in hint;
     hint.sin_family = AF_INET;

@@ -30,7 +30,7 @@
 #endif
 
 
-const char* lw_buffer;
+char* lw_buffer;
 
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t)) : endpoint_name(ep_name), reboot_cb(reb)
 {
@@ -67,7 +67,15 @@ uint8_t LWM2M_Client::getTxData(char*& outputBuffer)
 	outputBuffer = txData[txBuffer_tail];
 	txBuffer_tail = (txBuffer_tail + 1) & (TX_BUFFER_MAX_SIZE - 1);
 
-	if (txBuffer_head == txBuffer_tail) CLEAR_TX_FLAG();
+	if (txBuffer_head == txBuffer_tail)
+	{
+		CLEAR_TX_FLAG();
+		if (client_status == REGISTERED_TX_DATA_READY)
+		{
+			client_status = REGISTERED_IDLE;
+		}
+	}
+		
 
 	if (client_status == REGISTRATION_SCHEDULED)
 	{
@@ -95,14 +103,18 @@ uint8_t LWM2M_Client::schedule_tx(char* data)
 	txData[txBuffer_head] = data;
 	txBuffer_head = newHeadIndex;
 	SET_TX_FLAG();
+	client_status = REGISTERED_TX_DATA_READY;
 	return 0;
 }
 
-uint8_t LWM2M_Client::getRxData(const char*& outputBuffer)
+uint8_t LWM2M_Client::getRxData(char*& outputBuffer)
 {
 	if (!RX_FLAG) return NO_DATA_AVAILABLE;
 
-	outputBuffer = rxData[rxBuffer_tail];
+	char* ptr = rxData[rxBuffer_tail];
+	//outputBuffer = rxData[rxBuffer_tail];
+	outputBuffer = ptr;
+	//strcpy_s(outputBuffer, 1000,rxData[rxBuffer_tail]);
 	rxBuffer_tail = (rxBuffer_tail + 1) & (RX_BUFFER_MAX_SIZE - 1);
 
 	if (rxBuffer_head == rxBuffer_tail) CLEAR_RX_FLAG();
@@ -144,7 +156,6 @@ uint8_t LWM2M_Client::send_registration()
 
 	CoAP_set_payload(&coap_message, payload);
 
-	//CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
 
 	CoAP_assemble_message(&coap_message);
 
@@ -169,6 +180,35 @@ uint8_t LWM2M_Client::send_registration()
 
 }
 
+uint8_t LWM2M_Client::send_update()
+{
+	CoAP_message_t coap_message;
+	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, std::string(reg_id));
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + to_string(lifetime));
+	CoAP_assemble_message(&coap_message);
+
+#if defined(AUTO_SEND)
+
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
+	LOG_INFO("Sending update...");
+#endif
+
+	client_status = AWAIT_UPDATE_RESPONSE;
+	//return send(dataChar, strlen(dataChar));
+	return send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);
+#else
+	client_status = REGISTRATION_SCHEDULED;
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
+	LOG_INFO("Scheduling update request...");
+#endif
+	return schedule_tx(dataChar);
+
+#endif
+
+}
+
 void LWM2M_Client::loop()
 {
 	switch (client_status)
@@ -176,8 +216,9 @@ void LWM2M_Client::loop()
 	case NOT_REGISTERED:
 #if defined(AUTO_REGISTER)
 		send_registration();
-		break;
 #endif
+		break;
+
 	case REGISTRATION_SCHEDULED:
 		break;
 	case AWAIT_REGISTRATION_RESPONSE:
@@ -198,8 +239,33 @@ void LWM2M_Client::loop()
 					LOG_INFO("Registration succesful...");
 					LOG_INFO("Registration ID: " + std::string(reg_id));
 #endif
+					client_status = REGISTERED_IDLE;
 				}
 
+			}
+		}
+		break;
+
+	case REGISTERED_IDLE: case REGISTERED_TX_DATA_READY: case REGISTERED_AWAIT_RESPONSE:
+		if (sys_time >= (lastUpdate+lifetime-UPDATE_HYSTERESIS))
+		{
+			send_update();
+		}
+		break;
+	case AWAIT_UPDATE_RESPONSE:
+		if (getRxData(lw_buffer) != NO_DATA_AVAILABLE)
+		{
+			CoAP_Message_t message;
+			if (!CoAP_parse_message(&message, (char*)lw_buffer, strlen(lw_buffer))) //is valid coap message
+			{
+				if (message.header.type == COAP_ACK && message.header.returnCode == COAP_SUCCESS_CHANGED)
+				{
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
+					LOG_INFO("Update succesful...");
+#endif
+					client_status = REGISTERED_IDLE;
+					lastUpdate = sys_time;
+				}
 			}
 		}
 		break;
@@ -207,4 +273,9 @@ void LWM2M_Client::loop()
 		break;
 	}
 
+}
+
+void LWM2M_Client::advanceTime(uint16_t amount_in_seconds)
+{
+	sys_time += amount_in_seconds;
 }

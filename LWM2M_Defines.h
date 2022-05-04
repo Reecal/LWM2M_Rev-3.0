@@ -17,6 +17,8 @@
 //#define JSON_OMA
 //#define TLV
 
+#define UPDATE_HYSTERESIS 10 //Value that determines period before lifetime expires and the update should be sent
+
 
 
 enum LWM2M_Status
@@ -27,6 +29,7 @@ enum LWM2M_Status
 	REGISTERED_IDLE,
 	REGISTERED_TX_DATA_READY,
 	REGISTERED_AWAIT_RESPONSE,
+	AWAIT_UPDATE_RESPONSE,
 };
 
 
