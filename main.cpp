@@ -72,16 +72,16 @@ int main()
 
     std::cout << Ss << " " << Ll << std::endl;
 
-    client.schedule_tx(dataChar);
+    //client.schedule_tx(dataChar);
 
-    if (client.getStatus() == NOT_REGISTERED)
+    /*if (client.getStatus() == NOT_REGISTERED)
     {
         char* output;
         uint8_t response = client.getTxData(output);
         //send(s, output, strlen(output), 0);
         client.send(output, strlen(output));
        // send(s, , dat.length(), 0);
-    }
+    }*/
        
     
     
@@ -94,6 +94,7 @@ int main()
         {
             client.receive(outputBuffer, num_bytes);
         }
+        client.loop();
     }
 
     userInterfaceThread.join();

@@ -15,6 +15,8 @@ private:
 	uint8_t txBuffer_head = 0;
 	uint8_t txBuffer_tail = 0;
 
+	char lw_buffer[1000];
+
 	char* txData[TX_BUFFER_MAX_SIZE] = {0};
 	char* rxData[RX_BUFFER_MAX_SIZE] = {0};
 
@@ -23,17 +25,21 @@ private:
 	const char* endpoint_name;
 
 
+	uint8_t schedule_tx(char* data);
+	uint8_t getRxData(char* outputBuffer);
+	uint8_t send_registration();
+
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));
 	uint8_t receive(char* data, uint16_t data_length);
 	LWM2M_Status getStatus();
 	uint8_t getTxData(char*& outputBuffer);
-	uint8_t schedule_tx(char* data);
+	
 
 	void register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len));
 
 	//temp
-	void send(char* data, uint16_t data_len);
+	uint8_t send(char* data, uint16_t data_len);
 
 	void loop();
 

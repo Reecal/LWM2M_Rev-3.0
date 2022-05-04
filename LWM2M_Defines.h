@@ -8,9 +8,9 @@
 #define TX_BUFFER_MAX_SIZE 0x04
 #define RX_BUFFER_MAX_SIZE 0x04
 
-//#define AUTO_SEND //Whether message should be send automatically via provided send function.
+#define AUTO_SEND //Whether message should be send automatically via provided send function.
 
-//#define AUTO_REGISTER //Automatically registers to the server. Needs AUTO_SEND to be enabled.
+#define AUTO_REGISTER //Automatically generates registration messages and either sends them, depending on autosend, or schedules send into a buffer
 
 //Supported formats
 #define PLAIN_TEXT
@@ -22,6 +22,7 @@
 enum LWM2M_Status
 {
 	NOT_REGISTERED,
+	REGISTRATION_SCHEDULED,
 	AWAIT_REGISTRATION_RESPONSE,
 	REGISTERED_IDLE,
 	REGISTERED_TX_DATA_READY,
