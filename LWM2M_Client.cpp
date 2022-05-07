@@ -3,7 +3,7 @@
 #include <cstring>
 #include <string.h>
 #include "Logger_xdvora2g.h"
-#include "CoAP.hpp"
+
 
 
 #define LOG_VERBOSITY 3
@@ -198,18 +198,20 @@ uint8_t LWM2M_Client::send_update()
 
 #if defined(AUTO_SEND)
 
-#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
+	#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
 	LOG_INFO("Sending update...");
-#endif
+	#endif
 
 	client_status = AWAIT_UPDATE_RESPONSE;
 	//return send(dataChar, strlen(dataChar));
 	return send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);
 #else
 	client_status = REGISTRATION_SCHEDULED;
-#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
+
+	#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=3
 	LOG_INFO("Scheduling update request...");
-#endif
+	#endif
+
 	return schedule_tx(dataChar);
 
 #endif
@@ -223,7 +225,16 @@ uint8_t LWM2M_Client::update_routine()
 	{
 		//Try sending update again
 		//std::cout << "RETRY: " << (lastUpdate + lifetime) << " : " << (lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT << std::endl;
-		if ((lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT == 0)
+		if (sys_time >= (lastUpdate + lifetime))
+		{
+			client_status = NOT_REGISTERED;
+
+			#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
+			LOG_ERROR("Update response not received...");
+			#endif
+		}
+
+		else if ((lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT == 0)
 		{
 			return send_update();
 		}
@@ -235,6 +246,7 @@ uint8_t LWM2M_Client::update_routine()
 			return send_update();
 		}
 	}
+
 	
 
 	return 0;
@@ -264,42 +276,32 @@ void LWM2M_Client::loop()
 	if (CoAP_parse_message(&last_message, (char*)lw_buffer, strlen(lw_buffer)) != COAP_OK)
 	{
 		//If there was a error in parsing the message or the message
-		//is not valid, drop the message and return
+		//		is not valid, drop the message and return
 		return;
 	}
 
 	//The message should be parsed correctly here
-	if (client_status == AWAIT_REGISTRATION_RESPONSE)
+
+	switch (client_status)
 	{
-		if (last_message.header.type == COAP_ACK && last_message.header.returnCode == COAP_SUCCESS_CREATED)
+	case AWAIT_REGISTRATION_RESPONSE:
+		if (check_registration_message(&last_message) == REGISTRATION_SUCCESS)
 		{
-			for (uint8_t i = 0; i < last_message.options.options[1].option_length; i++)
-			{
-				reg_id[i] = last_message.options.options[1].option_value[i];
-			}
-			reg_id[last_message.options.options[1].option_length] = 0;
+			save_registration_id(&last_message);
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
 			LOG_INFO("Registration succesful...");
-			LOG_INFO("Registration ID: " + std::string(reg_id));
+			LOG_INFO("Registration ID: \x1B[32m" + std::string(reg_id) + "\033[0m");
 #endif
 			client_status = REGISTERED_IDLE;
 			lastUpdate = sys_time;
 		}
-		return;
-	}
-
-	//If the code reached this point, device should be registered to the server
-	
-	
-
-	//At this point message if valid, so we can parse it
+		break;
 
 
-	switch (client_status)
-	{
+
 	case AWAIT_UPDATE_RESPONSE:
-		
-		if (last_message.header.type == COAP_ACK && last_message.header.returnCode == COAP_SUCCESS_CHANGED)
+
+		if (check_update_message(&last_message) == UPDATE_SUCCESS)
 		{
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
 			LOG_INFO("Update succesful...");
@@ -307,19 +309,18 @@ void LWM2M_Client::loop()
 			client_status = REGISTERED_IDLE;
 			lastUpdate = sys_time;
 		}
-			
+
 		else
 		{
-			if (sys_time >= (lastUpdate + lifetime))
-			{
-				client_status = NOT_REGISTERED;
-#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
-				LOG_ERROR("Update response not received...");
-#endif
-			}
+			process_message(&last_message);
 		}
 		break;
+
+
+
+
 	case REGISTERED_IDLE: case REGISTERED_TX_DATA_READY: case REGISTERED_AWAIT_RESPONSE: default:
+		process_message(&last_message);
 		break;
 	}
 
@@ -328,4 +329,45 @@ void LWM2M_Client::loop()
 void LWM2M_Client::advanceTime(uint16_t amount_in_seconds)
 {
 	sys_time += amount_in_seconds;
+}
+
+uint8_t LWM2M_Client::check_registration_message(CoAP_message_t* c)
+{
+	if (c->header.type == COAP_ACK && c->header.returnCode == COAP_SUCCESS_CREATED)
+	{
+		//TODO: Properly check registration message
+		//if (strcmp((const char*)(c->options.options[0].option_value), "rd")) std::cout << c->options.options[0].option_value << std::endl;
+		
+		return REGISTRATION_SUCCESS;
+	}
+	return REGISTRATION_FAILED;
+	
+}
+
+uint8_t LWM2M_Client::check_update_message(CoAP_message_t* c)
+{
+	if (c->header.type == COAP_ACK && c->header.returnCode == COAP_SUCCESS_CHANGED)
+	{
+		//TODO: Properly check update message
+		//if (strcmp((const char*)(c->options.options[0].option_value), "rd")) std::cout << c->options.options[0].option_value << std::endl;
+
+		return UPDATE_SUCCESS;
+	}
+	return UPDATE_FAILED;
+
+}
+
+void LWM2M_Client::save_registration_id(CoAP_message_t* c)
+{
+	//TODO: Parse it properly from URI
+	for (uint8_t i = 0; i < c->options.options[1].option_length; i++)
+	{
+		reg_id[i] = c->options.options[1].option_value[i];
+	}
+	reg_id[c->options.options[1].option_length] = 0;
+}
+
+uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
+{
+	return 0;
 }

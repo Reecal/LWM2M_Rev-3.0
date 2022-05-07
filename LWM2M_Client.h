@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "LWM2M_Defines.h"
+#include "CoAP.hpp"
 
 class LWM2M_Client
 {
@@ -45,6 +46,10 @@ private:
 	uint8_t send_registration();
 	uint8_t send_update();
 	uint8_t update_routine();
+	uint8_t check_registration_message(CoAP_message_t* c);
+	uint8_t check_update_message(CoAP_message_t* c);
+	void save_registration_id(CoAP_message_t* c);
+	uint8_t process_message(CoAP_message_t* c);
 
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));

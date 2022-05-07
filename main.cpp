@@ -153,7 +153,6 @@ uint8_t rebootfunc(uint8_t d)
 
 uint8_t send_fc(char* data, uint16_t data_len)
 {
-    
     return send(s, data, data_len, 0);
 }
 
