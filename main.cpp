@@ -50,6 +50,7 @@ void destroySocket(SOCKET& socket);*/
 void changeReference(const char*& ptr, const char* text);
 uint8_t rebootfunc(uint8_t d);
 uint8_t send_fc(char* data, uint16_t data_len);
+void application_timer(LWM2M_Client& client, bool& applicationRun);
 
 SOCKET s;
 
@@ -108,6 +109,7 @@ int main()
     int num_ovf = 0;
     main_loop_bool = true;
     std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
+    std::thread timerThread(application_timer, std::ref(client), std::ref(applicationRunApp));
     while (applicationRunApp)
     {
         client.loop();
@@ -120,20 +122,21 @@ int main()
             
         }
         //client.loop();
-        ms_ctr++;
+        /*ms_ctr++;
         if (ms_ctr >= 10)
         {
             client.advanceTime(1);
             ms_ctr = 0;
             num_ovf++;
         }
-        std::cout << ms_ctr << std::endl;
-        Sleep(100);
+        //std::cout << ms_ctr << std::endl;
+        Sleep(100);*/
 
         
     }
 
     userInterfaceThread.join();
+    timerThread.join();
    
 }
 
@@ -152,4 +155,14 @@ uint8_t send_fc(char* data, uint16_t data_len)
 {
     
     return send(s, data, data_len, 0);
+}
+
+void application_timer(LWM2M_Client& client, bool& applicationRun)
+{
+	while (applicationRun)
+	{
+        Sleep(1000);
+        client.advanceTime(1);
+        //std::cout << "Tick" << std::endl;
+	}
 }

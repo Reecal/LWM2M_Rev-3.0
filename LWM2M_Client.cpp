@@ -31,6 +31,7 @@
 
 
 char* lw_buffer;
+CoAP_Message_t last_message;
 
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t)) : endpoint_name(ep_name), reboot_cb(reb)
 {
@@ -217,10 +218,11 @@ uint8_t LWM2M_Client::send_update()
 
 uint8_t LWM2M_Client::update_routine()
 {
+	if (client_status == NOT_REGISTERED || client_status == AWAIT_REGISTRATION_RESPONSE) return 1;
 	if (client_status == AWAIT_UPDATE_RESPONSE)
 	{
 		//Try sending update again
-		std::cout << "RETRY: " << (lastUpdate + lifetime) << " : " << (lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT << std::endl;
+		//std::cout << "RETRY: " << (lastUpdate + lifetime) << " : " << (lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT << std::endl;
 		if ((lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT == 0)
 		{
 			return send_update();
@@ -240,6 +242,7 @@ uint8_t LWM2M_Client::update_routine()
 
 void LWM2M_Client::loop()
 {
+	//Check if the client is registered or not
 	if (client_status == NOT_REGISTERED)
 	{
 #if defined(AUTO_REGISTER)
@@ -247,53 +250,47 @@ void LWM2M_Client::loop()
 #endif
 		return;
 	}
-	if (client_status == AWAIT_REGISTRATION_RESPONSE)
-	{
-		if (getRxData(lw_buffer) != NO_DATA_AVAILABLE)
-		{
-			//check if it's registration confirmation, otherwise drop
-			CoAP_Message_t message;
-			if (!CoAP_parse_message(&message, (char*)lw_buffer, strlen(lw_buffer))) //is valid coap message
-			{
-				if (message.header.type == COAP_ACK && message.header.returnCode == COAP_SUCCESS_CREATED)
-				{
-					for (uint8_t i = 0; i < message.options.options[1].option_length; i++)
-					{
-						reg_id[i] = message.options.options[1].option_value[i];
-					}
-					reg_id[message.options.options[1].option_length] = 0;
-#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
-					LOG_INFO("Registration succesful...");
-					LOG_INFO("Registration ID: " + std::string(reg_id));
-#endif
-					client_status = REGISTERED_IDLE;
-					lastUpdate = sys_time;
-				}
 
-			}
-		}
-		return;
-	}
-
-	//If the code reached this point, device should be registered to the server
 	update_routine();
 
-	//Check incoming message
+	//Check buffer for incoming message
 	if (getRxData(lw_buffer) == NO_DATA_AVAILABLE)
 	{
-		//If no message available. Return from loop
+		//If no message was received
 		return;
 	}
 
-	CoAP_Message_t message;
-
-	//Check message integrity
-	if (CoAP_parse_message(&message, (char*)lw_buffer, strlen(lw_buffer)) != COAP_OK)
+	//if message was received, try parsing it
+	if (CoAP_parse_message(&last_message, (char*)lw_buffer, strlen(lw_buffer)) != COAP_OK)
 	{
 		//If there was a error in parsing the message or the message
 		//is not valid, drop the message and return
 		return;
 	}
+
+	//The message should be parsed correctly here
+	if (client_status == AWAIT_REGISTRATION_RESPONSE)
+	{
+		if (last_message.header.type == COAP_ACK && last_message.header.returnCode == COAP_SUCCESS_CREATED)
+		{
+			for (uint8_t i = 0; i < last_message.options.options[1].option_length; i++)
+			{
+				reg_id[i] = last_message.options.options[1].option_value[i];
+			}
+			reg_id[last_message.options.options[1].option_length] = 0;
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
+			LOG_INFO("Registration succesful...");
+			LOG_INFO("Registration ID: " + std::string(reg_id));
+#endif
+			client_status = REGISTERED_IDLE;
+			lastUpdate = sys_time;
+		}
+		return;
+	}
+
+	//If the code reached this point, device should be registered to the server
+	
+	
 
 	//At this point message if valid, so we can parse it
 
@@ -302,7 +299,7 @@ void LWM2M_Client::loop()
 	{
 	case AWAIT_UPDATE_RESPONSE:
 		
-		if (message.header.type == COAP_ACK && message.header.returnCode == COAP_SUCCESS_CHANGED)
+		if (last_message.header.type == COAP_ACK && last_message.header.returnCode == COAP_SUCCESS_CHANGED)
 		{
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
 			LOG_INFO("Update succesful...");
