@@ -467,3 +467,25 @@ uint8_t CoAP_is_valid_coap_message(char data[])
 	return COAP_OK;
 }
 
+
+void CoAP_get_option_chars(CoAP_message_t* coap_struct, uint8_t option_to_get, char* output) {
+
+	uint16_t current_byte = 0;
+	int number_of_options = coap_struct->options.number_of_options;
+	for (int i = 0; i < number_of_options; i++) {
+		CoAP_option_t option = coap_struct->options.options[i];
+		if (option.option_number == option_to_get) {
+			if (current_byte != 0) output[current_byte++]= '/';
+			
+			for (int m = 0; m < option.option_length; m++) {
+				output[current_byte++] = option.option_value[m];
+			}
+			if (option_to_get == COAP_OPTIONS_OBSERVE)
+			{
+				output[current_byte++] = '0';
+			}
+		}
+	}
+	output[current_byte] = 0;
+}
+

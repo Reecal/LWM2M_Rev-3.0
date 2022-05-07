@@ -1,6 +1,3 @@
-// LWM2M_Final_CPP.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 //#include <vector>
 #include <string>
@@ -44,9 +41,6 @@ static bool isFinishedApp = false;
 static bool applicationRunApp = true;
 extern bool main_loop_bool;
 
-
-/*int initializeSocket(std::string ipAddress, int port, int tout, SOCKET& outSocket);
-void destroySocket(SOCKET& socket);*/
 void changeReference(const char*& ptr, const char* text);
 uint8_t rebootfunc(uint8_t d);
 uint8_t send_fc(char* data, uint16_t data_len);
@@ -70,31 +64,9 @@ int main()
     int port = 5683;
     const std::string epName = "C++_123";
 
-    std::string dat = "\x48\x02\x63\xc1\x08\x80\x6e\x17\x2e\xd0\x58\xe5\xb2rd\x11\x28\x33" \
-        "b=U\x09lwm2m=1.0\x06lt=100\x0d\x06"\
-        "ep=Radim_DP__LWM2M1\xff</>;ct=\"60 110 112 11542 11543\";rt=\"oma.lwm2m\",</1>;ver=1.1,</1/0>,</3>;ver=1.1,</3/0>,</6/0>,</3303>;ver=1.1,</3303/0>,</3441/0>";
-
-    char dataChar[] = "\x48\x02\x63\xc1\x08\x80\x6e\x17\x2e\xd0\x58\xe5\xb2rd\x11\x28\x33" \
-        "b=U\x09lwm2m=1.0\x06lt=100\x0d\x06"\
-        "ep=Radim_DP__LWM2M1\xff</>;ct=\"60 110 112 11542 11543\";rt=\"oma.lwm2m\",</1>;ver=1.1,</1/0>,</3>;ver=1.1,</3/0>,</6/0>,</3303>;ver=1.1,</3303/0>,</3441/0>";
-
-
-
     initializeSocket(ipAddr, port, 5, s);
 
     LOG_INFO("Socket Initialized...");
-	//std::cout << "Socket Initialized\n" << dat.length() << std::endl;
-
-    /*const char* Ss = "Hello world!";
-    const char* Ll = "Notify me!";
-
-    changeReference(Ss, Ll);
-
-    changeReference(Ss, "Yuhu");
-
-    std::cout << Ss << " " << Ll << std::endl;*/
-
-    //client.schedule_tx(dataChar);
 
     /*if (client.getStatus() == NOT_REGISTERED)
     {

@@ -156,6 +156,8 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 
 string CoAP_get_option_string(CoAP_message_t* coap_struct, uint8_t option_to_get);
 
+void CoAP_get_option_chars(CoAP_message_t* coap_struct, uint8_t option_to_get, char* output);
+
 void CoAP_send_error_response(SOCKET& sock, CoAP_message_t* message, uint8_t response_code);
 
 uint8_t CoAP_is_valid_coap_message(char data[]);

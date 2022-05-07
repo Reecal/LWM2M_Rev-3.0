@@ -281,6 +281,7 @@ void LWM2M_Client::loop()
 	}
 
 	//The message should be parsed correctly here
+	//print_message_info(&last_message);
 
 	switch (client_status)
 	{
@@ -289,7 +290,7 @@ void LWM2M_Client::loop()
 		{
 			save_registration_id(&last_message);
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
-			LOG_INFO("Registration succesful...");
+			LOG_INFO("Registration successful...");
 			LOG_INFO("Registration ID: \x1B[32m" + std::string(reg_id) + "\033[0m");
 #endif
 			client_status = REGISTERED_IDLE;
@@ -304,7 +305,7 @@ void LWM2M_Client::loop()
 		if (check_update_message(&last_message) == UPDATE_SUCCESS)
 		{
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
-			LOG_INFO("Update succesful...");
+			LOG_INFO("Update successful...");
 #endif
 			client_status = REGISTERED_IDLE;
 			lastUpdate = sys_time;
@@ -337,8 +338,13 @@ uint8_t LWM2M_Client::check_registration_message(CoAP_message_t* c)
 	{
 		//TODO: Properly check registration message
 		//if (strcmp((const char*)(c->options.options[0].option_value), "rd")) std::cout << c->options.options[0].option_value << std::endl;
+
+
+
+		//temporary
+		std::string loc_path = CoAP_get_option_string(c, COAP_OPTIONS_LOCATION_PATH);
+		if (loc_path.substr(0,2) == "rd") return REGISTRATION_SUCCESS;
 		
-		return REGISTRATION_SUCCESS;
 	}
 	return REGISTRATION_FAILED;
 	
@@ -348,9 +354,6 @@ uint8_t LWM2M_Client::check_update_message(CoAP_message_t* c)
 {
 	if (c->header.type == COAP_ACK && c->header.returnCode == COAP_SUCCESS_CHANGED)
 	{
-		//TODO: Properly check update message
-		//if (strcmp((const char*)(c->options.options[0].option_value), "rd")) std::cout << c->options.options[0].option_value << std::endl;
-
 		return UPDATE_SUCCESS;
 	}
 	return UPDATE_FAILED;
@@ -369,5 +372,31 @@ void LWM2M_Client::save_registration_id(CoAP_message_t* c)
 
 uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 {
+	print_message_info(c);
+
+
+
 	return 0;
+}
+
+void LWM2M_Client::print_message_info(CoAP_message_t* c)
+{
+	char outbuffer[50];
+	CoAP_get_option_chars(c, COAP_OPTIONS_LOCATION_PATH, outbuffer);
+	std::cout << "LOCATION PATH: " << outbuffer << std::endl;
+	CoAP_get_option_chars(c, COAP_OPTIONS_URI_PATH, outbuffer);
+	std::cout << "URI_PATH: " << outbuffer << std::endl;
+	CoAP_get_option_chars(c, COAP_OPTIONS_URI_QUERY, outbuffer);
+	std::cout << "URI_QUERY: " << outbuffer << std::endl;
+	CoAP_get_option_chars(c, COAP_OPTIONS_OBSERVE, outbuffer);
+	std::cout << "OBSERVE: " << outbuffer << std::endl;
+	
+	
+	
+
+
+	/*std::cout << "LOCATION PATH: " << CoAP_get_option_string(c, COAP_OPTIONS_LOCATION_PATH) << std::endl;
+	std::cout << "URI_PATH: " << CoAP_get_option_string(c, COAP_OPTIONS_URI_PATH) << std::endl;
+	std::cout << "URI_QUERY: " << CoAP_get_option_string(c, COAP_OPTIONS_URI_QUERY) << std::endl;
+	std::cout << "OBSERVE: " << CoAP_get_option_string(c, COAP_OPTIONS_OBSERVE) << std::endl;*/
 }

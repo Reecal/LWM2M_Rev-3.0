@@ -28,7 +28,7 @@ private:
 
 	
 	//temp
-	uint16_t lifetime = 30;
+	uint16_t lifetime = 300;
 
 	long long lastUpdate;
 	long long sys_time = 0;
@@ -50,6 +50,9 @@ private:
 	uint8_t check_update_message(CoAP_message_t* c);
 	void save_registration_id(CoAP_message_t* c);
 	uint8_t process_message(CoAP_message_t* c);
+	void print_message_info(CoAP_message_t* c);
+
+	
 
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));
