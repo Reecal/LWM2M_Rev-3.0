@@ -215,28 +215,49 @@ uint8_t LWM2M_Client::send_update()
 
 }
 
+uint8_t LWM2M_Client::update_routine()
+{
+	if (client_status == AWAIT_UPDATE_RESPONSE)
+	{
+		//Try sending update again
+		std::cout << "RETRY: " << (lastUpdate + lifetime) << " : " << (lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT << std::endl;
+		if ((lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT == 0)
+		{
+			return send_update();
+		}
+	}
+	else
+	{
+		if (sys_time >= (lastUpdate + lifetime - UPDATE_HYSTERESIS))
+		{
+			return send_update();
+		}
+	}
+	
+
+	return 0;
+}
+
 void LWM2M_Client::loop()
 {
-	switch (client_status)
+	if (client_status == NOT_REGISTERED)
 	{
-	case NOT_REGISTERED:
 #if defined(AUTO_REGISTER)
 		send_registration();
 #endif
-		break;
-
-	case REGISTRATION_SCHEDULED:
-		break;
-	case AWAIT_REGISTRATION_RESPONSE:
+		return;
+	}
+	if (client_status == AWAIT_REGISTRATION_RESPONSE)
+	{
 		if (getRxData(lw_buffer) != NO_DATA_AVAILABLE)
 		{
 			//check if it's registration confirmation, otherwise drop
 			CoAP_Message_t message;
-			if (!CoAP_parse_message(&message, (char*) lw_buffer, strlen(lw_buffer))) //is valid coap message
+			if (!CoAP_parse_message(&message, (char*)lw_buffer, strlen(lw_buffer))) //is valid coap message
 			{
 				if (message.header.type == COAP_ACK && message.header.returnCode == COAP_SUCCESS_CREATED)
 				{
-					for(uint8_t i = 0; i< message.options.options[1].option_length; i++)
+					for (uint8_t i = 0; i < message.options.options[1].option_length; i++)
 					{
 						reg_id[i] = message.options.options[1].option_value[i];
 					}
@@ -251,39 +272,57 @@ void LWM2M_Client::loop()
 
 			}
 		}
-		break;
+		return;
+	}
 
-	case REGISTERED_IDLE: case REGISTERED_TX_DATA_READY: case REGISTERED_AWAIT_RESPONSE:
-		if (sys_time >= (lastUpdate+lifetime-UPDATE_HYSTERESIS))
-		{
-			send_update();
-		}
-		break;
+	//If the code reached this point, device should be registered to the server
+	update_routine();
+
+	//Check incoming message
+	if (getRxData(lw_buffer) == NO_DATA_AVAILABLE)
+	{
+		//If no message available. Return from loop
+		return;
+	}
+
+	CoAP_Message_t message;
+
+	//Check message integrity
+	if (CoAP_parse_message(&message, (char*)lw_buffer, strlen(lw_buffer)) != COAP_OK)
+	{
+		//If there was a error in parsing the message or the message
+		//is not valid, drop the message and return
+		return;
+	}
+
+	//At this point message if valid, so we can parse it
+
+
+	switch (client_status)
+	{
 	case AWAIT_UPDATE_RESPONSE:
-		if (getRxData(lw_buffer) != NO_DATA_AVAILABLE)
+		
+		if (message.header.type == COAP_ACK && message.header.returnCode == COAP_SUCCESS_CHANGED)
 		{
-			CoAP_Message_t message;
-			if (!CoAP_parse_message(&message, (char*)lw_buffer, strlen(lw_buffer))) //is valid coap message
-			{
-				if (message.header.type == COAP_ACK && message.header.returnCode == COAP_SUCCESS_CHANGED)
-				{
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
-					LOG_INFO("Update succesful...");
+			LOG_INFO("Update succesful...");
 #endif
-					client_status = REGISTERED_IDLE;
-					lastUpdate = sys_time;
-				}
-			}
+			client_status = REGISTERED_IDLE;
+			lastUpdate = sys_time;
 		}
+			
 		else
 		{
 			if (sys_time >= (lastUpdate + lifetime))
 			{
 				client_status = NOT_REGISTERED;
+#if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
+				LOG_ERROR("Update response not received...");
+#endif
 			}
 		}
 		break;
-	default:
+	case REGISTERED_IDLE: case REGISTERED_TX_DATA_READY: case REGISTERED_AWAIT_RESPONSE: default:
 		break;
 	}
 

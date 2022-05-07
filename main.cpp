@@ -127,6 +127,7 @@ int main()
             ms_ctr = 0;
             num_ovf++;
         }
+        std::cout << ms_ctr << std::endl;
         Sleep(100);
 
         

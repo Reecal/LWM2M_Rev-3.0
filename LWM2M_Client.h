@@ -44,6 +44,7 @@ private:
 	uint8_t getRxData(char*& outputBuffer);
 	uint8_t send_registration();
 	uint8_t send_update();
+	uint8_t update_routine();
 
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));

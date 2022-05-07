@@ -18,6 +18,7 @@
 //#define TLV
 
 #define UPDATE_HYSTERESIS 10 //Value that determines period before lifetime expires and the update should be sent
+#define UPDATE_RETRY_TIMEOUT 4 //Time after which the update request is sent again if no response is received.
 
 
 

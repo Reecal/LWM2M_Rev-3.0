@@ -260,22 +260,12 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 }
 #endif // VERBOSE
 
-	
-	
-	
-
-	/*CoAP_header_t hdr = {0};
-	hdr.messageID = messageID;
-	hdr.returnCode = returnClassCode;
-	hdr.token_length = messageTkl;
-	hdr.type = messageType;*/
 	CoAP_header_t hdr = { messageType ,messageTkl ,returnClassCode , messageID };
 	for (uint16_t i = 0; i < messageTkl; i++) {
-		//hdr.token[i] = data[currentByte + i];
 		hdr.token[i] = data[currentByte++];
 	}
 
-	//currentByte += messageTkl;
+
 	//PARSE AND CHECK OPTIONS
 	CoAP_options_t options = {0};
 
@@ -284,7 +274,8 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 
 	while (currentByte < msgLen ) {
 		
-		if ((data[currentByte] & 0xff) == 0xff) {
+		//End of options (0xff)
+		if ((data[currentByte] & 0xff) == COAP_END_OF_OPTIONS) {
 			currentByte++;
 			break;
 		}
