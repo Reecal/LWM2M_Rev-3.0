@@ -7,6 +7,19 @@
 #define LOG_WARNING_MESSAGE_TYPE	1
 #define LOG_ERROR_MESSAGE_TYPE		2
 
+
+
+
+#define CET 1
+#define CEST 2
+
+#define UTC_OFFSET CEST
+
+
+
+#define DIFF_SUMMER_AND_WINTER_TIME
+
+
 struct LogEvent_t {
 	unsigned long long timestamp;
 	int logSeverity;

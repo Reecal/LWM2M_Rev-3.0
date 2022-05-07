@@ -4,6 +4,7 @@
 #define COAP_H
 
 #pragma once
+#include <string>
 
 using namespace std;
 
@@ -85,6 +86,13 @@ using namespace std;
 #define FORMAT_PLAIN_TEXT				0x00
 #define FORMAT_JSON						0x2d17
 
+#define COAP_OK 0
+#define COAP_BAD_VERSION 1
+#define COAP_BAD_TYPE 2
+#define COAP_BAD_TKL 3
+#define COAP_BAD_METHOD 4
+#define COAP_BAD_OPTION 5
+
 typedef struct CoAP_Header_t {
 	uint8_t type = COAP_CON;
 	uint8_t token_length = 0;
@@ -142,10 +150,12 @@ uint8_t CoAP_assemble_message(CoAP_message_t* coap_struct);
 
 uint8_t CoAP_send(SOCKET& sock, CoAP_message_t* coap_struct);
 
-uint8_t CoAP_parse_message(CoAP_message_t* output, char buffer[], uint16_t msgLen);
+uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen);
 
 string CoAP_get_option_string(CoAP_message_t* coap_struct, uint8_t option_to_get);
 
 void CoAP_send_error_response(SOCKET& sock, CoAP_message_t* message, uint8_t response_code);
+
+uint8_t CoAP_is_valid_coap_message(char data[]);
 #endif // !COAP_H
 

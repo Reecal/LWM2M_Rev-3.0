@@ -44,7 +44,9 @@ void Push_Out(LogEvent_t& event)
 			long long hours = minutes / 60;
 			seconds = seconds % 60;
 			minutes = minutes % 60;
-			hours = (hours+1) % 24;
+			hours = (hours+UTC_OFFSET) % 24;
+
+
 
 			std::string hourString = std::to_string(hours);
 			std::string minutesString = std::to_string(minutes);

@@ -275,6 +275,13 @@ void LWM2M_Client::loop()
 				}
 			}
 		}
+		else
+		{
+			if (sys_time >= (lastUpdate + lifetime))
+			{
+				client_status = NOT_REGISTERED;
+			}
+		}
 		break;
 	default:
 		break;

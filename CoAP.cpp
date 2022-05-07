@@ -232,38 +232,13 @@ uint8_t CoAP_assemble_message(CoAP_message_t* coap_struct) {
 
 uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen) {
 
-	//bool verbose = true;
-	
-	//CHECK VERSION
-	if (COAP_HEADER_VERSION(data) != COAP_VERSION) return 1;
+	uint8_t check_message_result = CoAP_is_valid_coap_message(data);
+	if (check_message_result != COAP_OK) return check_message_result;
 
-	//PARSE AND CHECK HEADER
 	uint8_t messageType = COAP_HEADER_TYPE(data);
-	bool messageTypeOK = messageType >= 0x00 && messageType <= 0x03;
-	if (!messageTypeOK) return 2;
-	
-
 	uint8_t messageTkl = COAP_HEADER_TKL(data);
-	bool messageTklOK = messageTkl <= 0x08;
-	if (!messageTklOK) return 3;
-
 	uint8_t returnClassCode = COAP_HEADER_CLASS(data) << 5 | COAP_HEADER_CODE(data);
-	bool classMethodValid = returnClassCode == COAP_METHOD_GET || returnClassCode == COAP_METHOD_POST || returnClassCode == COAP_METHOD_PUT || returnClassCode == COAP_METHOD_DELETE ||
-		returnClassCode == COAP_METHOD_FETCH || returnClassCode == COAP_METHOD_PATCH || returnClassCode == COAP_METHOD_IPATCH || returnClassCode == COAP_EMPTY_MESSAGE ;
 
-	bool classSuccessValid = returnClassCode == COAP_SUCCESS_CREATED || returnClassCode == COAP_SUCCESS_DELETED || returnClassCode == COAP_SUCCESS_VALID || 
-								returnClassCode == COAP_SUCCESS_CHANGED || returnClassCode == COAP_SUCCESS_CONTENT;
-
-	bool classClientErrorValid = returnClassCode == COAP_C_ERR_BAD_REQUEST || returnClassCode == COAP_C_ERR_UNAUTHORIZED || returnClassCode == COAP_C_ERR_BAD_OPT ||
-									returnClassCode == COAP_C_ERR_FORBIDDEN || returnClassCode == COAP_C_ERR_NOT_FOUND;
-
-	bool classServerErrorValid = returnClassCode == COAP_S_ERR_INTERNAL_ERR || returnClassCode == COAP_S_ERR_NOT_IMPLEMENTED || returnClassCode == COAP_S_ERR_BAD_GATEWAY ||
-									returnClassCode == COAP_S_ERR_SERVICE_UNAVAILABLE || returnClassCode == COAP_S_ERR_GATEWAY_TIMEOUT;
-	bool returnClassCodeOK = classMethodValid || classSuccessValid || classClientErrorValid || classServerErrorValid;
-
-	if (!returnClassCodeOK) return 4;
-
-	//uint16_t messageID = COAP_HEADER_MID(data);
 	uint16_t messageID = ((data[2] & 0xff) << 8) | (data[3] & 0xff);
 
 
@@ -273,7 +248,7 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 		output->header.returnCode = returnClassCode;
 		output->header.token_length = messageTkl;
 		output->header.messageID = messageID;
-		return 0;
+		return COAP_OK;
 	}
 
 	uint16_t currentByte = 4;
@@ -289,16 +264,18 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 	
 	
 
-	CoAP_header_t hdr = { 0 };
+	/*CoAP_header_t hdr = {0};
 	hdr.messageID = messageID;
 	hdr.returnCode = returnClassCode;
 	hdr.token_length = messageTkl;
-	hdr.type = messageType;
+	hdr.type = messageType;*/
+	CoAP_header_t hdr = { messageType ,messageTkl ,returnClassCode , messageID };
 	for (uint16_t i = 0; i < messageTkl; i++) {
-		hdr.token[i] = data[currentByte + i];
+		//hdr.token[i] = data[currentByte + i];
+		hdr.token[i] = data[currentByte++];
 	}
 
-	currentByte += messageTkl;
+	//currentByte += messageTkl;
 	//PARSE AND CHECK OPTIONS
 	CoAP_options_t options = {0};
 
@@ -328,7 +305,7 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 			cout << "Option number: " << buffer << endl;
 
 #endif // VERBOSE				
-			return 5;
+			return COAP_BAD_OPTION;
 		}
 		currentByte++;
 
@@ -425,7 +402,7 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 #endif // VERBOSE
 
 	
-	return 0;
+	return COAP_OK;
 }
 
 uint8_t CoAP_send(SOCKET& sock, CoAP_message_t* coap_struct) {
@@ -464,3 +441,38 @@ void CoAP_send_error_response(SOCKET& sock, CoAP_message_t* message, uint8_t res
 	CoAP_tx_setup(&error_message, message_type, message->header.token_length, response_code, message->header.messageID, message->header.token);
 	CoAP_send(sock, &error_message);
 }
+
+uint8_t CoAP_is_valid_coap_message(char data[])
+{
+	//CHECK VERSION
+	if (COAP_HEADER_VERSION(data) != COAP_VERSION) return COAP_BAD_VERSION;
+
+	//PARSE AND CHECK HEADER
+	uint8_t messageType = COAP_HEADER_TYPE(data);
+	bool messageTypeOK = messageType >= 0x00 && messageType <= 0x03;
+	if (!messageTypeOK) return COAP_BAD_TYPE;
+
+
+	uint8_t messageTkl = COAP_HEADER_TKL(data);
+	bool messageTklOK = messageTkl <= 0x08;
+	if (!messageTklOK) return COAP_BAD_TKL;
+
+	uint8_t returnClassCode = COAP_HEADER_CLASS(data) << 5 | COAP_HEADER_CODE(data);
+	bool classMethodValid = returnClassCode == COAP_METHOD_GET || returnClassCode == COAP_METHOD_POST || returnClassCode == COAP_METHOD_PUT || returnClassCode == COAP_METHOD_DELETE ||
+		returnClassCode == COAP_METHOD_FETCH || returnClassCode == COAP_METHOD_PATCH || returnClassCode == COAP_METHOD_IPATCH || returnClassCode == COAP_EMPTY_MESSAGE;
+
+	bool classSuccessValid = returnClassCode == COAP_SUCCESS_CREATED || returnClassCode == COAP_SUCCESS_DELETED || returnClassCode == COAP_SUCCESS_VALID ||
+		returnClassCode == COAP_SUCCESS_CHANGED || returnClassCode == COAP_SUCCESS_CONTENT;
+
+	bool classClientErrorValid = returnClassCode == COAP_C_ERR_BAD_REQUEST || returnClassCode == COAP_C_ERR_UNAUTHORIZED || returnClassCode == COAP_C_ERR_BAD_OPT ||
+		returnClassCode == COAP_C_ERR_FORBIDDEN || returnClassCode == COAP_C_ERR_NOT_FOUND;
+
+	bool classServerErrorValid = returnClassCode == COAP_S_ERR_INTERNAL_ERR || returnClassCode == COAP_S_ERR_NOT_IMPLEMENTED || returnClassCode == COAP_S_ERR_BAD_GATEWAY ||
+		returnClassCode == COAP_S_ERR_SERVICE_UNAVAILABLE || returnClassCode == COAP_S_ERR_GATEWAY_TIMEOUT;
+	bool returnClassCodeOK = classMethodValid || classSuccessValid || classClientErrorValid || classServerErrorValid;
+
+	if (!returnClassCodeOK) return COAP_BAD_METHOD;
+
+	return COAP_OK;
+}
+

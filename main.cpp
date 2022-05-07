@@ -84,14 +84,14 @@ int main()
     LOG_INFO("Socket Initialized...");
 	//std::cout << "Socket Initialized\n" << dat.length() << std::endl;
 
-    const char* Ss = "Hello world!";
+    /*const char* Ss = "Hello world!";
     const char* Ll = "Notify me!";
 
     changeReference(Ss, Ll);
 
     changeReference(Ss, "Yuhu");
 
-    std::cout << Ss << " " << Ll << std::endl;
+    std::cout << Ss << " " << Ll << std::endl;*/
 
     //client.schedule_tx(dataChar);
 
@@ -121,13 +121,13 @@ int main()
         }
         //client.loop();
         ms_ctr++;
-        if (ms_ctr >= 1000)
+        if (ms_ctr >= 10)
         {
             client.advanceTime(1);
             ms_ctr = 0;
             num_ovf++;
         }
-        Sleep(1);
+        Sleep(100);
 
         
     }
