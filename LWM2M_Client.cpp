@@ -153,7 +153,7 @@ uint8_t LWM2M_Client::send_registration()
 	CoAP_message_t coap_message;
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
-	CoAP_add_option(&coap_message, COAP_OPTIONS_CONTENT_FORMAT, 0x28);
+	CoAP_add_option(&coap_message, COAP_OPTIONS_CONTENT_FORMAT, APPLICATION_LINK_FORMAT);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "b=U");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lwm2m=1.0");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + to_string(lifetime));
@@ -373,8 +373,20 @@ void LWM2M_Client::save_registration_id(CoAP_message_t* c)
 uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 {
 	print_message_info(c);
+	char uri_buffer[50];
+	CoAP_get_option_chars(c, COAP_OPTIONS_LOCATION_PATH, uri_buffer);
 
 
+
+
+
+
+	CoAP_message_t error_message;
+	int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+	CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_C_ERR_NOT_FOUND, c->header.messageID, c->header.token);
+	CoAP_set_payload(&error_message, "Not found!");
+	CoAP_assemble_message(&error_message);
+	send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
 
 	return 0;
 }

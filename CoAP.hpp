@@ -83,6 +83,8 @@ using namespace std;
 #define COAP_OPTIONS_URI_QUERY			0x0f
 #define COAP_OPTIONS_ACCEPT				0x11
 
+#define APPLICATION_LINK_FORMAT			0x28
+
 #define FORMAT_PLAIN_TEXT				0x00
 #define FORMAT_JSON						0x2d17
 
