@@ -55,7 +55,9 @@ SOCKET s;
 
 int main()
 {
-    LWM2M_Client client("RD_EP", rebootfunc);
+    srand(time(NULL));
+
+	LWM2M_Client client("RD_EP", rebootfunc);
     client.register_send_callback(send_fc);
 	
 
@@ -102,7 +104,8 @@ int main()
        // send(s, , dat.length(), 0);
     }*/
        
-    
+    int ms_ctr = 0;
+    int num_ovf = 0;
     main_loop_bool = true;
     std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
     while (applicationRunApp)
@@ -110,13 +113,21 @@ int main()
         client.loop();
     	char outputBuffer[1500];
 
-        uint8_t num_bytes = recv(s, outputBuffer, 1500, 0);
+        int num_bytes = recv(s, outputBuffer, 1500, 0);
         if (num_bytes > 0)
         {
             client.receive(outputBuffer, num_bytes);
+            
         }
-        Sleep(1000);
-        client.advanceTime(1);
+        //client.loop();
+        ms_ctr++;
+        if (ms_ctr >= 1000)
+        {
+            client.advanceTime(1);
+            ms_ctr = 0;
+            num_ovf++;
+        }
+        Sleep(1);
 
         
     }

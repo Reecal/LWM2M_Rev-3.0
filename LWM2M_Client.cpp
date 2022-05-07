@@ -8,13 +8,13 @@
 
 #define LOG_VERBOSITY 3
 
-#define SET_TX_FLAG() LWM2M_Client::flags |= 0x01
-#define CLEAR_TX_FLAG() LWM2M_Client::flags &= ~0x01
+#define SET_TX_FLAG() (LWM2M_Client::flags |= 0x01)
+#define CLEAR_TX_FLAG() (LWM2M_Client::flags &= ~0x01)
 
-#define SET_RX_FLAG() LWM2M_Client::flags |= 0x02
-#define CLEAR_RX_FLAG() LWM2M_Client::flags &= ~0x02
+#define SET_RX_FLAG() (LWM2M_Client::flags |= 0x02)
+#define CLEAR_RX_FLAG() (LWM2M_Client::flags &= ~0x02)
 
-#define RX_FLAG		LWM2M_Client::flags & 0x02
+#define RX_FLAG		(LWM2M_Client::flags & 0x02)
 
 #if LOG_OUTPUT == 1
 #define LOG_ENTITY "\x1B[34mLWM2M_CLIENT\033[0m"
@@ -34,7 +34,13 @@ char* lw_buffer;
 
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t)) : endpoint_name(ep_name), reboot_cb(reb)
 {
-	
+	flags = 0;
+	rxBuffer_head = 0;
+	rxBuffer_tail = 0;
+	txBuffer_head = 0;
+	txBuffer_tail = 0;
+	sys_time = 0;
+	lastUpdate = 0;
 }
 
 
@@ -240,6 +246,7 @@ void LWM2M_Client::loop()
 					LOG_INFO("Registration ID: " + std::string(reg_id));
 #endif
 					client_status = REGISTERED_IDLE;
+					lastUpdate = sys_time;
 				}
 
 			}
