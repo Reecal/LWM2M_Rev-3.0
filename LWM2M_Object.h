@@ -43,5 +43,7 @@ public:
 		return instance_id;
 	}
 
+	bool resource_exists(uint16_t rsrc_id);
+	bool resource_exists(uint16_t rsrc_id, uint16_t sub_res_id);
 
 };

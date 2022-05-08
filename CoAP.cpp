@@ -498,10 +498,10 @@ URI_Path_t CoAP_get_URI(CoAP_message_t* coap_struct){
 		CoAP_option_t option = coap_struct->options.options[i];
 		if (option.option_number == COAP_OPTIONS_URI_PATH) {
 			uint16_t mpl = 1;
-			uint16_t number;
+			uint16_t number = 0;
 			for(int8_t m = option.option_length-1 ; m >=0  ; m--)
 			{
-				number = (option.option_value[m] - 0x30) * mpl;
+				number += (option.option_value[m] - 0x30) * mpl;
 				mpl *= 10;
 			}
 			path.data[path.path_depth++] = number;

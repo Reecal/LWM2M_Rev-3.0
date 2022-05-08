@@ -57,7 +57,17 @@ int main()
 
 	LWM2M_Client client("RD_EP", rebootfunc);
     client.register_send_callback(send_fc);
-	
+
+	client.createObject(3441, 0);
+    client.addResource(3441, 0, 110, TYPE_STRING, READ_WRITE, false, (char*)"initial value");
+    client.addResource(3441, 0, 120, TYPE_INT, READ_WRITE, false, (int) 1024);
+    client.addResource(3441, 0, 130, TYPE_FLOAT, READ_WRITE, false, (float)3.14159);
+    client.addResource(3441, 0, 140, TYPE_BOOLEAN, READ_WRITE, false, true);
+
+
+
+
+
 
     LOG_INFO("Program start...");
     

@@ -394,10 +394,10 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 	}
 	else
 	{
-		deviceManagementAndInformationReportingIntefaceHandle(c);
+		deviceManagementAndInformationReportingInterfaceHandle(c);
 	}
 
-	if (uri_buffer[0] == '3')
+	/*if (uri_buffer[0] == '3')
 	{
 		LWM2M_Object obj = getObject(3);
 		LWM2M_Resource re = obj.getResource(0);
@@ -422,7 +422,7 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 			CoAP_assemble_message(&error_message);
 			send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
 		}
-	}
+	}*/
 	
 	
 
@@ -491,10 +491,116 @@ void LWM2M_Client::bootstrapInterfaceHandle(CoAP_message_t* c)
 {
 	
 }
-void LWM2M_Client::deviceManagementAndInformationReportingIntefaceHandle(CoAP_message_t* c)
+void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_message_t* c)
 {
 	URI_Path_t uri = CoAP_get_URI(c);
+	bool uri_good = check_URI(&uri);
+	if (uri_good)
+	{
+		LOG_INFO("Request for " + CoAP_get_option_string(c, COAP_OPTIONS_URI_PATH));
+
+		CoAP_message_t error_message;
+		int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+		CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
+		CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
+		CoAP_set_payload(&error_message, getObject(uri.obj_id,uri.instance_id).getResource(uri.resource_id).getValue());
+		CoAP_assemble_message(&error_message);
+		send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
 
 
+	}
 
+
+}
+
+bool LWM2M_Client::object_exists(uint16_t object_id)
+{
+	for (uint8_t search_var = 0; search_var < next_obj_ptr; search_var++)
+	{
+		if (object_ids[search_var] == object_id)
+			return true;
+	}
+	return false;
+}
+
+bool LWM2M_Client::object_exists(uint16_t object_id, uint16_t instance_id)
+{
+	for (uint8_t search_var = 0; search_var < next_obj_ptr; search_var++)
+	{
+		if (object_ids[search_var] == object_id && objects[search_var].getInstance_id() == instance_id)
+			return true;
+	}
+	return false;
+}
+
+bool LWM2M_Client::check_URI(URI_Path_t* uri)
+{
+	if (uri->path_depth == 0 || (uri->path_depth > 4))
+	{
+		return false;
+	}
+
+	if (uri->path_depth >= 1)
+	{
+		if (!object_exists(uri->obj_id))  return false;
+	}
+	if (uri->path_depth >= 2)
+	{
+		if (!object_exists(uri->obj_id, uri->instance_id))  return false;
+	}
+	if (uri->path_depth >= 3)
+	{
+		if (!getObject(uri->obj_id, uri->instance_id).resource_exists(uri->resource_id))  return false;
+	}
+
+	if (uri->path_depth == 4)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void LWM2M_Client::createObject(uint16_t object_id, uint8_t instance_id)
+{
+	object_ids[next_obj_ptr] = object_id;
+	LWM2M_Object obj(3, instance_id);
+	objects[next_obj_ptr] = obj;
+	next_obj_ptr++;
+}
+
+void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value)
+{
+	if (object_exists(object_id,instance_id))
+	{
+		getObject(object_id, instance_id).add_resource(resource_id, type, permissions, multi_level, default_value);
+	}
+}
+void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value)
+{
+	if (object_exists(object_id, instance_id))
+	{
+		getObject(object_id, instance_id).add_resource(resource_id, type, permissions, multi_level, default_value);
+	}
+}
+void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value)
+{
+	if (object_exists(object_id, instance_id))
+	{
+		getObject(object_id, instance_id).add_resource(resource_id, type, permissions, multi_level, default_value);
+	}
+}
+void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value)
+{
+	if (object_exists(object_id, instance_id))
+	{
+		getObject(object_id, instance_id).add_resource(resource_id, type, permissions, multi_level, default_value);
+	}
+}
+void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)())
+{
+	if (object_exists(object_id, instance_id))
+	{
+		getObject(object_id, instance_id).add_resource(resource_id, type, permissions, multi_level, execute_func);
+	}
 }

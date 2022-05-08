@@ -44,10 +44,10 @@ private:
 
 public:
 	LWM2M_Resource(uint16_t resource_id = 0, uint8_t type = TYPE_INT, uint8_t permissions = READ_WRITE, bool multi_level = false);
-	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value);
-	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value);
-	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value);
-	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value);
+	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value = 0);
+	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value = false);
+	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value = 0);
+	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value = nullptr);
 	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)());
 
 	uint16_t getResource_id()

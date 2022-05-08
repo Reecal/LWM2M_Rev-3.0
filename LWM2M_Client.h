@@ -62,8 +62,10 @@ private:
 	void print_message_info(CoAP_message_t* c);
 	void registrationInterfaceHandle(CoAP_message_t* c);
 	void bootstrapInterfaceHandle(CoAP_message_t* c);
-	void deviceManagementAndInformationReportingIntefaceHandle(CoAP_message_t* c);
-	
+	void deviceManagementAndInformationReportingInterfaceHandle(CoAP_message_t* c);
+	bool object_exists(uint16_t object_id);
+	bool object_exists(uint16_t object_id, uint16_t instance_id);
+	bool check_URI(URI_Path_t* uri);
 
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));
@@ -72,6 +74,12 @@ public:
 	uint8_t getTxData(char*& outputBuffer);
 	void advanceTime(uint16_t amount_in_seconds);
 	LWM2M_Object& getObject(uint16_t object_id, uint8_t instance_id = 0);
+	void createObject(uint16_t object_id, uint8_t instance_id);
+	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value);
+	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value);
+	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value);
+	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value);
+	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)());
 
 	void register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len));
 
