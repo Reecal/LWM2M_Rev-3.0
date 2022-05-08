@@ -143,6 +143,8 @@
     <ClCompile Include="CoAP.cpp" />
     <ClCompile Include="Logger_xdvora2g.cpp" />
     <ClCompile Include="LWM2M_Client.cpp" />
+    <ClCompile Include="LWM2M_Object.cpp" />
+    <ClCompile Include="LWM2M_Resource.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerformaceTimer.cpp" />
     <ClCompile Include="SerialComm.cpp" />
@@ -155,6 +157,8 @@
     <ClInclude Include="Logger_xdvora2g.h" />
     <ClInclude Include="LWM2M_Client.h" />
     <ClInclude Include="LWM2M_Defines.h" />
+    <ClInclude Include="LWM2M_Object.h" />
+    <ClInclude Include="LWM2M_Resource.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="SerialComm.h" />
     <ClInclude Include="Utils.h" />

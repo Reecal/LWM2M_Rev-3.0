@@ -42,6 +42,12 @@
     <ClCompile Include="SerialComm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LWM2M_Object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LWM2M_Resource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PerformanceTimer.h">
@@ -66,6 +72,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SerialComm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LWM2M_Object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LWM2M_Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

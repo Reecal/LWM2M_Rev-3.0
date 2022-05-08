@@ -1,12 +1,5 @@
 #pragma once
 
-
-#define MAX_OBJECTS 10
-#define MAX_INSTANCES 2
-#define MAX_RESOURCES 22
-#define MAX_RESOURCE_PARTS 5
-#define MAX_STRING_LENGTH 40
-
 //#define USE_DTLS
 
 //#define PSK
@@ -27,6 +20,10 @@
 #define UPDATE_HYSTERESIS 10 //Value that determines period before lifetime expires and the update should be sent
 #define UPDATE_RETRY_TIMEOUT 4 //Time after which the update request is sent again if no response is received.
 
+#define MAX_OBJECTS 10
+#define MAX_INSTANCES 2
+#define MAX_RESOURCES 15
+#define MAX_RESOURCE_PARTS 5
 
 
 

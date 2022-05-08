@@ -20,7 +20,7 @@
 #include "BG77.h"
 
 //#define LOG_OUTPUT 1
-#define USE_BG77
+//#define USE_BG77
 
 #if LOG_OUTPUT == 1
 //#define LOG_ENTITY "\x1B[34mMain\033[0m"
@@ -91,13 +91,8 @@ int main()
         std::cout << "BG77 not responding!\r\n";
         while (1);
     }
-    Sleep(1000);
     bg.activatePDP(1);
-    //std::cout << "OUT : " << bg77_buffer << std::endl;
-    Sleep(500);
     bg.openSocket(1, 9431);
-    //std::cout << "OUT : " << bg77_buffer << std::endl;
-    Sleep(500);
 
 #endif
 
@@ -150,9 +145,11 @@ int main()
     userInterfaceThread.join();
     timerThread.join();
     client.client_deregister();
+    client.loop();
 #if defined(USE_BG77)
     /*bg.sendRAW("AT+QICLOSE=1", bg77_buffer);
     bg.sendRAW("AT+QIDEACT=1", bg77_buffer);*/
+    Sleep(1000);
     bg.closeSocket(1);
     bg.deactivatePDP(1);
 #endif
