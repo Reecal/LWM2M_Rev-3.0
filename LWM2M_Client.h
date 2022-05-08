@@ -31,7 +31,7 @@ private:
 
 	
 	//temp
-	uint16_t lifetime = 300;
+	uint16_t lifetime = 600;
 
 	long long lastUpdate = 0;
 	long long sys_time = 0;
@@ -66,6 +66,9 @@ private:
 	bool object_exists(uint16_t object_id);
 	bool object_exists(uint16_t object_id, uint16_t instance_id);
 	bool check_URI(URI_Path_t* uri);
+	void lwm_read(CoAP_message_t* c, URI_Path_t* uri);
+	void lwm_write(CoAP_message_t* c, URI_Path_t* uri);
+	void lwm_execute(CoAP_message_t* c, URI_Path_t* uri);
 
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));

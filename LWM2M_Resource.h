@@ -35,6 +35,7 @@ private:
 	bool multi_level;
 	uint8_t type;
 	uint8_t permissions;
+	uint8_t next_value_ptr = 0;
 	Value_t values[MAX_RESOURCE_PARTS];
 	char string_value[MAX_RESOURCE_PARTS][MAX_STRING_LENGTH];
 	uint8_t(*execute_cb)();
@@ -63,6 +64,11 @@ public:
 	uint8_t getPermissions()
 	{
 		return permissions;
+	}
+
+	bool getMultiLevel()
+	{
+		return multi_level;
 	}
 
 	std::string getValue(int depth = 0);
@@ -95,5 +101,8 @@ public:
 	{
 		execute_cb = execute_func;
 	}
+
+	bool value_exists(uint8_t value_depth);
+	
 	
 };

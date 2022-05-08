@@ -14,7 +14,7 @@ LWM2M_Resource::LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permi
 LWM2M_Resource::LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value) : resource_id(resource_id), type(type), permissions(permissions), multi_level(multi_level)
 {
 	values->bool_value = default_value;
-	string_val[0] = default_value ? std::string("true") : std::string("false");
+	string_val[0] = default_value ? std::string("1") : std::string("0");
 }
 LWM2M_Resource::LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value) : resource_id(resource_id), type(type), permissions(permissions), multi_level(multi_level)
 {
@@ -36,4 +36,10 @@ LWM2M_Resource::LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permi
 std::string LWM2M_Resource::getValue(int depth)
 {
 	return string_val[depth];
+}
+
+bool LWM2M_Resource::value_exists(uint8_t value_depth)
+{
+	if (value_depth < next_value_ptr) return true;
+	return false;
 }

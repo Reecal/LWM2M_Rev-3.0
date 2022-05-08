@@ -155,7 +155,7 @@ int main()
     userInterfaceThread.join();
     timerThread.join();
     client.client_deregister();
-    client.loop();
+    //client.loop();
 #if defined(USE_BG77)
     /*bg.sendRAW("AT+QICLOSE=1", bg77_buffer);
     bg.sendRAW("AT+QIDEACT=1", bg77_buffer);*/

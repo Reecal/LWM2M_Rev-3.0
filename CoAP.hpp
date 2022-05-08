@@ -97,6 +97,7 @@ using namespace std;
 
 #define COAP_END_OF_OPTIONS 0xff
 
+
 typedef struct CoAP_Header_t {
 	uint8_t type = COAP_CON;
 	uint8_t token_length = 0;

@@ -279,7 +279,7 @@ void LWM2M_Client::loop()
 	}
 
 	//if message was received, try parsing it
-	if (CoAP_parse_message(&last_message, (char*)lw_buffer, strlen(lw_buffer)) != COAP_OK)
+	if (CoAP_parse_message(&last_message, (char*)lw_buffer, strlen(lw_buffer)) != COAP_OK)////<-----------------------------ERROR Need to save data length as well due to the possibility of token having a 0 in it
 	{
 		//If there was a error in parsing the message or the message
 		//		is not valid, drop the message and return
@@ -397,32 +397,6 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 		deviceManagementAndInformationReportingInterfaceHandle(c);
 	}
 
-	/*if (uri_buffer[0] == '3')
-	{
-		LWM2M_Object obj = getObject(3);
-		LWM2M_Resource re = obj.getResource(0);
-		std::string pl = re.getValue();
-
-		CoAP_message_t error_message;
-		int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-		CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
-		CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
-		CoAP_set_payload(&error_message, pl);
-		CoAP_assemble_message(&error_message);
-		send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
-	}
-	else
-	{
-		if (c->header.type != COAP_ACK)
-		{
-			CoAP_message_t error_message;
-			int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-			CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_C_ERR_NOT_FOUND, c->header.messageID, c->header.token);
-			CoAP_set_payload(&error_message, "Not found!");
-			CoAP_assemble_message(&error_message);
-			send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
-		}
-	}*/
 	
 	
 
@@ -442,17 +416,13 @@ void LWM2M_Client::print_message_info(CoAP_message_t* c)
 	std::cout << "URI_QUERY: " << outbuffer << std::endl;
 	CoAP_get_option_chars(c, COAP_OPTIONS_OBSERVE, outbuffer);
 	std::cout << "OBSERVE: " << outbuffer << std::endl;
-	
-	
-	
 
 
 
 
-	/*std::cout << "LOCATION PATH: " << CoAP_get_option_string(c, COAP_OPTIONS_LOCATION_PATH) << std::endl;
-	std::cout << "URI_PATH: " << CoAP_get_option_string(c, COAP_OPTIONS_URI_PATH) << std::endl;
-	std::cout << "URI_QUERY: " << CoAP_get_option_string(c, COAP_OPTIONS_URI_QUERY) << std::endl;
-	std::cout << "OBSERVE: " << CoAP_get_option_string(c, COAP_OPTIONS_OBSERVE) << std::endl;*/
+
+
+
 }
 
 uint8_t LWM2M_Client::client_deregister() {
@@ -499,17 +469,45 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 	{
 		LOG_INFO("Request for " + CoAP_get_option_string(c, COAP_OPTIONS_URI_PATH));
 
-		CoAP_message_t error_message;
+		switch(c->header.returnCode)
+		{
+		case COAP_METHOD_GET:
+			lwm_read(c, &uri);
+			break;
+		case COAP_METHOD_POST:
+			lwm_write(c, &uri);
+			break;
+		case COAP_METHOD_PUT:
+			lwm_execute(c, &uri);
+			break;
+		default: //DELETE or ACK
+			break;
+		}
+
+
+		/*CoAP_message_t error_message;
 		int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
 		CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
 		CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
 		CoAP_set_payload(&error_message, getObject(uri.obj_id,uri.instance_id).getResource(uri.resource_id).getValue());
 		CoAP_assemble_message(&error_message);
-		send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
+		send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);*/
 
 
 	}
 
+	else
+	{
+		if (c->header.type != COAP_ACK)
+		{
+			CoAP_message_t error_message;
+			int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+			CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_C_ERR_NOT_FOUND, c->header.messageID, c->header.token);
+			CoAP_set_payload(&error_message, "Not found!");
+			CoAP_assemble_message(&error_message);
+			send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
+		}
+	}
 
 }
 
@@ -555,7 +553,7 @@ bool LWM2M_Client::check_URI(URI_Path_t* uri)
 
 	if (uri->path_depth == 4)
 	{
-		return false;
+		if (!getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).value_exists(uri->multi_level_id))  return false;
 	}
 
 	return true;
@@ -603,4 +601,61 @@ void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t
 	{
 		getObject(object_id, instance_id).add_resource(resource_id, type, permissions, multi_level, execute_func);
 	}
+}
+
+void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
+{
+	//At this point URI is good
+	if (uri->path_depth >= REQUEST_RESOURCE)
+	{
+		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
+		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == READ_ONLY)
+		{
+			if (uri->path_depth == REQUEST_RESOURCE)
+			{
+				if (resource.getMultiLevel())
+				{
+					//send json
+				}
+				else
+				{
+					//send value
+					CoAP_message_t error_message;
+					int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+					CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
+					CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
+					CoAP_set_payload(&error_message, resource.getValue());
+					CoAP_assemble_message(&error_message);
+					send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
+				}
+			}
+			else //Request multi value resource
+			{
+				if (resource.getMultiLevel())
+				{
+					//send value
+				}
+				else
+				{
+					//send error
+				}
+			}
+			
+		}
+		else
+		{
+			//bad permission
+		}
+	}
+
+}
+
+void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
+{
+	
+}
+
+void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
+{
+	
 }
