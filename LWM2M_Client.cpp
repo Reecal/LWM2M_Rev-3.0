@@ -37,13 +37,11 @@ CoAP_Message_t last_message;
 
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t)) : endpoint_name(ep_name), reboot_cb(reb)
 {
-	flags = 0;
-	rxBuffer_head = 0;
-	rxBuffer_tail = 0;
-	txBuffer_head = 0;
-	txBuffer_tail = 0;
-	sys_time = 0;
-	lastUpdate = 0;
+	object_ids[next_obj_ptr] = 3;
+	LWM2M_Object obj3(3);
+	obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"Your mom");
+	objects[next_obj_ptr] = obj3;
+	next_obj_ptr++;
 }
 
 
@@ -381,22 +379,51 @@ void LWM2M_Client::save_registration_id(CoAP_message_t* c)
 uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 {
 	print_message_info(c);
-	char uri_buffer[50];
+	char uri_buffer[20];
 	CoAP_get_option_chars(c, COAP_OPTIONS_LOCATION_PATH, uri_buffer);
 
+	
 
-
-
-
-	if(c->header.type != COAP_ACK)
+	if (uri_buffer[0] == 'r' && uri_buffer[1] == 'd')
 	{
+		registrationInterfaceHandle(c);
+	}
+	else if (uri_buffer[0] == 'b' && uri_buffer[1] == 's')
+	{
+		bootstrapInterfaceHandle(c);
+	}
+	else
+	{
+		deviceManagementAndInformationReportingIntefaceHandle(c);
+	}
+
+	if (uri_buffer[0] == '3')
+	{
+		LWM2M_Object obj = getObject(3);
+		LWM2M_Resource re = obj.getResource(0);
+		std::string pl = re.getValue();
+
 		CoAP_message_t error_message;
 		int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-		CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_C_ERR_NOT_FOUND, c->header.messageID, c->header.token);
-		CoAP_set_payload(&error_message, "Not found!");
+		CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
+		CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
+		CoAP_set_payload(&error_message, pl);
 		CoAP_assemble_message(&error_message);
 		send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
 	}
+	else
+	{
+		if (c->header.type != COAP_ACK)
+		{
+			CoAP_message_t error_message;
+			int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+			CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_C_ERR_NOT_FOUND, c->header.messageID, c->header.token);
+			CoAP_set_payload(&error_message, "Not found!");
+			CoAP_assemble_message(&error_message);
+			send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
+		}
+	}
+	
 	
 
 	return 0;
@@ -404,6 +431,8 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 
 void LWM2M_Client::print_message_info(CoAP_message_t* c)
 {
+
+
 	char outbuffer[50];
 	CoAP_get_option_chars(c, COAP_OPTIONS_LOCATION_PATH, outbuffer);
 	std::cout << "LOCATION PATH: " << outbuffer << std::endl;
@@ -416,6 +445,8 @@ void LWM2M_Client::print_message_info(CoAP_message_t* c)
 	
 	
 	
+
+
 
 
 	/*std::cout << "LOCATION PATH: " << CoAP_get_option_string(c, COAP_OPTIONS_LOCATION_PATH) << std::endl;
@@ -441,4 +472,29 @@ uint8_t LWM2M_Client::client_deregister() {
 	client_status = NOT_REGISTERED;
 	LOG_INFO("Deregistration message sent.");
 	return 0;
+}
+
+LWM2M_Object& LWM2M_Client::getObject(uint16_t object_id, uint8_t instance_id)
+{
+	for(uint8_t search_var = 0; search_var < next_obj_ptr; search_var++)
+	{
+		if (object_ids[search_var] == object_id && objects[search_var].getInstance_id() == instance_id)
+			return objects[search_var];
+	}
+}
+
+void LWM2M_Client::registrationInterfaceHandle(CoAP_message_t* c)
+{
+	
+}
+void LWM2M_Client::bootstrapInterfaceHandle(CoAP_message_t* c)
+{
+	
+}
+void LWM2M_Client::deviceManagementAndInformationReportingIntefaceHandle(CoAP_message_t* c)
+{
+	URI_Path_t uri = CoAP_get_URI(c);
+
+
+
 }

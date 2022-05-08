@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "LWM2M_Defines.h"
 #include "CoAP.hpp"
+#include "LWM2M_Object.h"
 
 class LWM2M_Client
 {
@@ -12,6 +13,8 @@ class LWM2M_Client
 		char* data;
 		uint16_t data_length;
 	};
+
+	
 
 
 private:
@@ -28,15 +31,21 @@ private:
 
 	
 	//temp
-	uint16_t lifetime = 30;
+	uint16_t lifetime = 300;
 
-	long long lastUpdate;
+	long long lastUpdate = 0;
 	long long sys_time = 0;
 
 	
 	
 	const char* endpoint_name;
 	char reg_id[12];
+
+
+	uint8_t next_obj_ptr = 0;
+	uint16_t object_ids[MAX_OBJECTS * MAX_INSTANCES];
+	LWM2M_Object objects[MAX_OBJECTS*MAX_INSTANCES];
+
 
 	uint8_t(*reboot_cb)(uint8_t);
 	uint8_t(*send_cb)(char* data, uint16_t data_len);
@@ -51,8 +60,9 @@ private:
 	void save_registration_id(CoAP_message_t* c);
 	uint8_t process_message(CoAP_message_t* c);
 	void print_message_info(CoAP_message_t* c);
-	
-
+	void registrationInterfaceHandle(CoAP_message_t* c);
+	void bootstrapInterfaceHandle(CoAP_message_t* c);
+	void deviceManagementAndInformationReportingIntefaceHandle(CoAP_message_t* c);
 	
 
 public:
@@ -61,7 +71,7 @@ public:
 	LWM2M_Status getStatus();
 	uint8_t getTxData(char*& outputBuffer);
 	void advanceTime(uint16_t amount_in_seconds);
-	
+	LWM2M_Object& getObject(uint16_t object_id, uint8_t instance_id = 0);
 
 	void register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len));
 

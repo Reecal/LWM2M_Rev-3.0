@@ -132,6 +132,21 @@ typedef struct CoAP_Message_t {
 	CoAP_raw_t raw_data;
 }CoAP_message_t;
 
+struct URI_Path_t
+{
+	union
+	{
+		uint16_t data[4] = {0,0,0,0};
+		struct
+		{
+			uint16_t obj_id;
+			uint16_t instance_id;
+			uint16_t resource_id;
+			uint16_t multi_level_id;
+		};
+	};
+	uint8_t path_depth = 0;
+};
 
 uint8_t CoAP_init(CoAP_message_t* coap_struct);
 
@@ -163,5 +178,7 @@ void CoAP_get_option_chars(CoAP_message_t* coap_struct, uint8_t option_to_get, c
 void CoAP_send_error_response(SOCKET& sock, CoAP_message_t* message, uint8_t response_code);
 
 uint8_t CoAP_is_valid_coap_message(char data[]);
+
+URI_Path_t CoAP_get_URI(CoAP_message_t* coap_struct);
 #endif // !COAP_H
 

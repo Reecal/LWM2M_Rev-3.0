@@ -42,3 +42,13 @@ void LWM2M_Object::add_resource(uint16_t resource_id, uint8_t type, uint8_t perm
 	next_resource_ptr++;
 }
 
+LWM2M_Resource& LWM2M_Object::getResource(uint16_t rsrc_id)
+{
+	//uint8_t ptr = next_resource_ptr;
+	for (uint8_t search_var = 0; search_var < next_resource_ptr; search_var++)
+	{
+		if (resource_ids[search_var] == rsrc_id)
+			return resources[search_var];
+	}
+}
+

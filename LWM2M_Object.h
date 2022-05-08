@@ -7,16 +7,17 @@ class LWM2M_Object
 {
 private:
 
+	
+
+public:
+
 	uint16_t obj_id;
 	uint8_t instance_id;
-
 	uint8_t next_resource_ptr = 0;
-
 	uint16_t resource_ids[MAX_RESOURCES];
 	LWM2M_Resource resources[MAX_RESOURCES];
 
-public:
-	LWM2M_Object(uint16_t obj_id, uint8_t instance_id = 0);
+	LWM2M_Object(uint16_t obj_id = 65535, uint8_t instance_id = 0);
 
 	void add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value);
 	void add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value);
@@ -25,7 +26,7 @@ public:
 	void add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)());
 
 
-
+	LWM2M_Resource& getResource(uint16_t rsrc_id);
 
 	void setInstance_id(uint8_t inst_id)
 	{

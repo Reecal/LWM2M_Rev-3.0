@@ -21,7 +21,7 @@
 
 
 
-char buffer[1500] = { 0 };
+char buffer[500] = { 0 };
 
 BG77::BG77(bool verbose)
 {

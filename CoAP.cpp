@@ -475,7 +475,7 @@ void CoAP_get_option_chars(CoAP_message_t* coap_struct, uint8_t option_to_get, c
 	for (int i = 0; i < number_of_options; i++) {
 		CoAP_option_t option = coap_struct->options.options[i];
 		if (option.option_number == option_to_get) {
-			if (current_byte != 0) output[current_byte++]= '/';
+			output[current_byte++]= '/';
 			
 			for (int m = 0; m < option.option_length; m++) {
 				output[current_byte++] = option.option_value[m];
@@ -487,5 +487,27 @@ void CoAP_get_option_chars(CoAP_message_t* coap_struct, uint8_t option_to_get, c
 		}
 	}
 	output[current_byte] = 0;
+}
+
+URI_Path_t CoAP_get_URI(CoAP_message_t* coap_struct){
+
+	uint16_t current_byte = 0;
+	int number_of_options = coap_struct->options.number_of_options;
+	URI_Path_t path;
+	for (int i = 0; i < number_of_options; i++) {
+		CoAP_option_t option = coap_struct->options.options[i];
+		if (option.option_number == COAP_OPTIONS_URI_PATH) {
+			uint16_t mpl = 1;
+			uint16_t number;
+			for(int8_t m = option.option_length-1 ; m >=0  ; m--)
+			{
+				number = (option.option_value[m] - 0x30) * mpl;
+				mpl *= 10;
+			}
+			path.data[path.path_depth++] = number;
+
+		}
+	}
+	return path;
 }
 
