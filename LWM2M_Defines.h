@@ -42,8 +42,8 @@ enum LWM2M_Status
 };
 
 
-#define DATA_AVAILABLE 0
-#define NO_DATA_AVAILABLE 1
+#define DATA_AVAILABLE 1
+#define NO_DATA_AVAILABLE 0
 #define BUFFER_OVERFLOW 2
 
 #define REGISTRATION_SUCCESS 0

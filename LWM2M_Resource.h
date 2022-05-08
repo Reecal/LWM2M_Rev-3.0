@@ -103,6 +103,11 @@ public:
 	}
 
 	bool value_exists(uint8_t value_depth);
+	 
+	uint8_t execute()
+	{
+		return execute_cb();
+	}
 	
 	
 };

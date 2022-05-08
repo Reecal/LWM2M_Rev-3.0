@@ -21,6 +21,7 @@ private:
 	LWM2M_Status client_status = NOT_REGISTERED;
 	uint8_t flags = 0;
 
+	uint16_t msg_lengths[TX_BUFFER_MAX_SIZE] = { 0 };
 	char* txData[TX_BUFFER_MAX_SIZE] = { 0 };
 	char* rxData[RX_BUFFER_MAX_SIZE] = { 0 };
 
@@ -51,7 +52,7 @@ private:
 	uint8_t(*send_cb)(char* data, uint16_t data_len);
 
 	uint8_t schedule_tx(char* data);
-	uint8_t getRxData(char*& outputBuffer);
+	uint16_t getRxData(char*& outputBuffer);
 	uint8_t send_registration();
 	uint8_t send_update();
 	uint8_t update_routine();

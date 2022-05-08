@@ -55,6 +55,7 @@ uint8_t LWM2M_Client::receive(char* data, uint16_t data_length)
 		return BUFFER_OVERFLOW;
 	}
 
+	msg_lengths[rxBuffer_head] = data_length;
 	data[data_length] = '\0';
 	rxData[rxBuffer_head] = data;
 	rxBuffer_head = newHeadIndex;
@@ -114,11 +115,12 @@ uint8_t LWM2M_Client::schedule_tx(char* data)
 	return 0;
 }
 
-uint8_t LWM2M_Client::getRxData(char*& outputBuffer)
+uint16_t LWM2M_Client::getRxData(char*& outputBuffer)
 {
 	if (!RX_FLAG) return NO_DATA_AVAILABLE;
 
 	char* ptr = rxData[rxBuffer_tail];
+	uint16_t msgLen = msg_lengths[rxBuffer_tail];
 	//outputBuffer = rxData[rxBuffer_tail];
 	outputBuffer = ptr;
 	//strcpy_s(outputBuffer, 1000,rxData[rxBuffer_tail]);
@@ -126,7 +128,7 @@ uint8_t LWM2M_Client::getRxData(char*& outputBuffer)
 
 	if (rxBuffer_head == rxBuffer_tail) CLEAR_RX_FLAG();
 
-	return 0;
+	return msgLen;
 }
 
 void LWM2M_Client::register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len))
@@ -272,14 +274,15 @@ void LWM2M_Client::loop()
 	update_routine();
 
 	//Check buffer for incoming message
-	if (getRxData(lw_buffer) == NO_DATA_AVAILABLE)
+	uint16_t msg_len = getRxData(lw_buffer);
+	if (msg_len == NO_DATA_AVAILABLE)
 	{
 		//If no message was received
 		return;
 	}
 
 	//if message was received, try parsing it
-	if (CoAP_parse_message(&last_message, (char*)lw_buffer, strlen(lw_buffer)) != COAP_OK)////<-----------------------------ERROR Need to save data length as well due to the possibility of token having a 0 in it
+	if (CoAP_parse_message(&last_message, (char*)lw_buffer, msg_len) != COAP_OK)
 	{
 		//If there was a error in parsing the message or the message
 		//		is not valid, drop the message and return
@@ -615,7 +618,15 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 			{
 				if (resource.getMultiLevel())
 				{
-					//send json
+					//send multivalue json
+					std::string pl = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
+					CoAP_message_t error_message;
+					int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+					CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
+					CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_JSON);
+					CoAP_set_payload(&error_message, pl);
+					CoAP_assemble_message(&error_message);
+					send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
 				}
 				else
 				{
@@ -634,6 +645,13 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 				if (resource.getMultiLevel())
 				{
 					//send value
+					CoAP_message_t error_message;
+					int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+					CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
+					CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
+					CoAP_set_payload(&error_message, resource.getValue(uri->multi_level_id));
+					CoAP_assemble_message(&error_message);
+					send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
 				}
 				else
 				{
