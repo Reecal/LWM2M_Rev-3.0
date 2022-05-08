@@ -156,7 +156,7 @@ int main()
     bg.closeSocket(1);
     bg.deactivatePDP(1);
 #endif
-   
+    LOG_INFO("Exiting program...");
 }
 
 void changeReference(const char*& ptr, const char* text)
