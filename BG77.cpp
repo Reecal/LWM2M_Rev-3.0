@@ -315,3 +315,23 @@ int BG77::closeSocket(uint8_t PDP_index)
 	}
 	return BG77_SUCCESS;
 }
+
+int BG77::sendData(uint8_t socket_id, char* data, uint16_t data_len, char* IPAddress, uint16_t port)
+{
+	// sprintf_s(bg77_buffer, "AT+QISEND=1,%d,\"62.245.65.221\",9431", data_len);
+	sprintf_s(buffer, "AT+QISEND=%d,%d,\"%s\",%d", socket_id, data_len, IPAddress, port);
+	sc.sendCommand(buffer);
+	sc.readSerial(buffer);
+	if (_verbose) std::cout << buffer;
+	sc.sendData(data, data_len);
+	sc.readSerial(buffer);
+	if (_verbose) std::cout << buffer;
+
+	if (!strstr(buffer, "\r\nSEND OK\r\n"))
+	{
+		LOG_ERROR("Sending Data FAILED.");
+		return BG77_NO_COMMS;
+	}
+	LOG_INFO("Sent " + std::to_string(data_len) + "bytes.");
+	return BG77_SUCCESS;
+}

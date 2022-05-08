@@ -28,7 +28,7 @@ private:
 
 	
 	//temp
-	uint16_t lifetime = 600;
+	uint16_t lifetime = 30;
 
 	long long lastUpdate;
 	long long sys_time = 0;

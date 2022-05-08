@@ -41,6 +41,14 @@ void SerialComm::sendCommand(const char input[])
     WriteFile(serialHandle, buffer, strlen(buffer), p, d);
 }
 
+void SerialComm::sendData(const char input[], uint16_t data_len)
+{
+    char buffer[1500];
+    sprintf_s(buffer, "%s", input);
+    //std::cout << ">" << buffer;
+    WriteFile(serialHandle, buffer, data_len, p, d);
+}
+
 void SerialComm::readSerial(char* outputBuffer, int bufferSize)
 {
     for(int i = 0; i < bufferSize; i++)

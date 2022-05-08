@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "windows.h"
 
 class SerialComm
@@ -14,6 +16,7 @@ public:
 	~SerialComm();
 	void sendCommand(const char input[]);
 	void readSerial(char* outputBuffer, int bufferSize=1500);
+	void sendData(const char input[], uint16_t data_len);
 
 
 };

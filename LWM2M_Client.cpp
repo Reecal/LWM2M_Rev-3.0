@@ -29,6 +29,8 @@
 #define LOG_ERROR(x) 
 #endif
 
+uint8_t update_already_sent = 0;
+long long last_update_sent = 0;
 
 char* lw_buffer;
 CoAP_Message_t last_message;
@@ -204,6 +206,7 @@ uint8_t LWM2M_Client::send_update()
 
 	client_status = AWAIT_UPDATE_RESPONSE;
 	//return send(dataChar, strlen(dataChar));
+	last_update_sent = sys_time;
 	return send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);
 #else
 	client_status = REGISTRATION_SCHEDULED;
@@ -236,7 +239,12 @@ uint8_t LWM2M_Client::update_routine()
 
 		else if (((lastUpdate + lifetime) - sys_time) % UPDATE_RETRY_TIMEOUT == 0)
 		{
-			return send_update();
+			if (sys_time != last_update_sent)
+			{
+				return send_update();
+			}
+			return 0;
+			
 		}
 	}
 	else

@@ -20,7 +20,7 @@
 #include "BG77.h"
 
 //#define LOG_OUTPUT 1
-//#define USE_BG77
+#define USE_BG77
 
 #if LOG_OUTPUT == 1
 //#define LOG_ENTITY "\x1B[34mMain\033[0m"
@@ -173,12 +173,13 @@ uint8_t rebootfunc(uint8_t d)
 uint8_t send_fc(char* data, uint16_t data_len)
 {
 #if defined(USE_BG77)
-    char bg77_buffer[1500];
+    /*char bg77_buffer[1500];
     sprintf_s(bg77_buffer, "AT+QISEND=1,%d,\"62.245.65.221\",9431", data_len);
     bg.sendRAW(bg77_buffer, bg77_buffer);
     //std::cout << "OUT : " << bg77_buffer << std::endl;
     bg.sendRAW(data, bg77_buffer);
-    //std::cout << "OUT : " << bg77_buffer << std::endl;
+    //std::cout << "OUT : " << bg77_buffer << std::endl;*/
+    bg.sendData(1, data, data_len, (char*)"62.245.65.221", 9431);
     return 0;
 #else
     return send(s, data, data_len, 0);

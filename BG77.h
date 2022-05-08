@@ -53,6 +53,7 @@ public:
 	int openSocket(uint8_t PDP_index, uint8_t port);
 	int deactivatePDP(uint8_t PDP_index);
 	int closeSocket(uint8_t PDP_index);
+	int sendData(uint8_t socket_id, char* data, uint16_t data_len, char* IPAddress,uint16_t port );
 
 
 
