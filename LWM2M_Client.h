@@ -4,6 +4,7 @@
 #include "LWM2M_Defines.h"
 #include "CoAP.hpp"
 #include "LWM2M_Object.h"
+#include "json.h"
 
 class LWM2M_Client
 {

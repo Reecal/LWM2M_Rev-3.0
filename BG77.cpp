@@ -332,6 +332,6 @@ int BG77::sendData(uint8_t socket_id, char* data, uint16_t data_len, char* IPAdd
 		LOG_ERROR("Sending Data FAILED.");
 		return BG77_NO_COMMS;
 	}
-	LOG_INFO("Sent " + std::to_string(data_len) + "bytes.");
+	LOG_INFO("Sent " + std::to_string(data_len) + " bytes.");
 	return BG77_SUCCESS;
 }

@@ -603,6 +603,22 @@ void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t
 void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 {
 	//At this point URI is good
+	/*LWM2M_Object o = getObject(3, 0);
+	std::string js = json::createJSON_Object(o);
+	respond(c, COAP_SUCCESS_CONTENT, js, MULTI_VALUE_FORMAT);
+	return;*/
+
+	/*LWM2M_Object o = getObject(3, 0);
+	std::string js = json::createJSON_Instance(o);
+	respond(c, COAP_SUCCESS_CONTENT, js, MULTI_VALUE_FORMAT);
+	return;*/
+
+	LWM2M_Resource r = getObject(3, 0).getResource(0);
+	std::string js = json::createJSON_Resource(uri,r);
+	respond(c, COAP_SUCCESS_CONTENT, js, MULTI_VALUE_FORMAT);
+	return;
+
+
 	if (uri->path_depth >= REQUEST_RESOURCE)
 	{
 		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
@@ -648,13 +664,13 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 		{
 			//send multivalue json
 			std::string pl = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
-			respond(c, COAP_SUCCESS_CONTENT, pl, FORMAT_JSON);
+			respond(c, COAP_SUCCESS_CONTENT, pl, MULTI_VALUE_FORMAT);
 
 		}
 		else
 		{
 			//send value
-			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), FORMAT_PLAIN_TEXT);
+			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), SINGLE_VALUE_FORMAT);
 
 		}
 	}
@@ -663,7 +679,7 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 		if (resource.getMultiLevel())
 		{
 			//send value
-			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), FORMAT_PLAIN_TEXT);
+			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), SINGLE_VALUE_FORMAT);
 		}
 		else
 		{
