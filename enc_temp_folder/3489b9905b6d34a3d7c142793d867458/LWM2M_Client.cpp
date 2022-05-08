@@ -468,13 +468,24 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 {
 	URI_Path_t uri = CoAP_get_URI(c);
 
+	std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
+	uint16_t value_format = 0;
+	if (s != "0")
+	{
+		value_format = s[0] << 8 | s[1];
+	}
+
+
+
 	
-	bool format_good = check_response_format(c);
-	if (!format_good)
+	//std::cout << "Accept: " << value_format << std::endl;
+
+	if (value_format != SINGLE_VALUE_FORMAT && value_format != MULTI_VALUE_FORMAT)
 	{
 		respond(c, COAP_C_ERR_BAD_OPT, std::string("Format not supported"));
 		return;
 	}
+
 
 	bool uri_good = check_URI(&uri);
 	if (uri_good)
@@ -671,21 +682,4 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 			respond(c, COAP_C_ERR_BAD_REQUEST, std::string("This resource is not a multiresoure."));
 		}
 	}
-}
-
-bool LWM2M_Client::check_response_format(CoAP_message_t* c)
-{
-	std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
-	uint16_t value_format = 0;
-	if (s != "0")
-	{
-		value_format = s[0] << 8 | s[1];
-	}
-
-	if (value_format != SINGLE_VALUE_FORMAT && value_format != MULTI_VALUE_FORMAT)
-	{
-		return false;
-	}
-
-	return true;
 }
