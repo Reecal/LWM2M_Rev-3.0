@@ -51,6 +51,8 @@ public:
 	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value = nullptr);
 	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)());
 
+	void update_resource(std::string res_val, uint8_t depth = 0);
+
 	uint16_t getResource_id()
 	{
 		return resource_id;

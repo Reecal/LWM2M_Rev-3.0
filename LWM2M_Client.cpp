@@ -468,13 +468,6 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 {
 	URI_Path_t uri = CoAP_get_URI(c);
 
-	
-	bool format_good = check_response_format(c);
-	if (!format_good)
-	{
-		respond(c, COAP_C_ERR_BAD_OPT, std::string("Format not supported"));
-		return;
-	}
 
 	bool uri_good = check_URI(&uri);
 	if (uri_good)
@@ -487,10 +480,10 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 			lwm_read(c, &uri);
 			break;
 		case COAP_METHOD_POST:
-			lwm_write(c, &uri);
+			lwm_execute(c, &uri);
 			break;
 		case COAP_METHOD_PUT:
-			lwm_execute(c, &uri);
+			lwm_write(c, &uri);
 			break;
 		default: //DELETE or ACK
 			break;
@@ -603,20 +596,15 @@ void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t
 void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 {
 	//At this point URI is good
-	/*LWM2M_Object o = getObject(3, 0);
-	std::string js = json::createJSON_Object(o);
-	respond(c, COAP_SUCCESS_CONTENT, js, MULTI_VALUE_FORMAT);
-	return;*/
+	
+	LOG_INFO("LWM_READ");
 
-	/*LWM2M_Object o = getObject(3, 0);
-	std::string js = json::createJSON_Instance(o);
-	respond(c, COAP_SUCCESS_CONTENT, js, MULTI_VALUE_FORMAT);
-	return;*/
-
-	LWM2M_Resource r = getObject(3, 0).getResource(0);
-	std::string js = json::createJSON_Resource(uri,r);
-	respond(c, COAP_SUCCESS_CONTENT, js, MULTI_VALUE_FORMAT);
-	return;
+	bool format_good = check_message_format(c, COAP_OPTIONS_ACCEPT);
+	if (!format_good)
+	{
+		respond(c, COAP_C_ERR_BAD_OPT, std::string("Format not supported"));
+		return;
+	}
 
 
 	if (uri->path_depth >= REQUEST_RESOURCE)
@@ -632,12 +620,40 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 			respond(c, COAP_C_ERR_FORBIDDEN, std::string("Invalid access permission."));
 		}
 	}
+	//TODO:Add read for instances and objects
 
 }
 
 void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 {
-	
+	//At this point URI is good
+
+	LOG_INFO("LWM_WRITE");
+
+	bool format_good = check_message_format(c, COAP_OPTIONS_CONTENT_FORMAT);
+	if (!format_good)
+	{
+		respond(c, COAP_C_ERR_BAD_OPT, std::string("Format not supported"));
+		return;
+	}
+
+	if (uri->path_depth >= REQUEST_RESOURCE)
+	{
+		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
+		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == WRITE_ONLY)
+		{
+			//send_resource(c, uri, resource);
+			getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).update_resource(c->payload, uri->multi_level_id);
+			respond(c, COAP_SUCCESS_CHANGED);
+		}
+		else
+		{
+			//bad permission
+			respond(c, COAP_C_ERR_FORBIDDEN, std::string("Invalid access permission."));
+		}
+	}
+	//TODO:Add write for instances and objects
+
 }
 
 void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
@@ -647,6 +663,7 @@ void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
 
 void LWM2M_Client::respond(CoAP_message_t* c, uint8_t return_code, std::string payload, uint16_t payload_format)
 {
+	LOG_INFO("Responding to the request. Payload: " + payload);
 	CoAP_message_t response;
 	int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
 	CoAP_tx_setup(&response, message_type, c->header.token_length, return_code, c->header.messageID, c->header.token);
@@ -658,19 +675,50 @@ void LWM2M_Client::respond(CoAP_message_t* c, uint8_t return_code, std::string p
 
 void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resource& resource)
 {
+	std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
+	uint16_t value_format = 0;
+	if (s != "0")
+	{
+		value_format = s[0] << 8 | s[1];
+	}
+
 	if (uri->path_depth == REQUEST_RESOURCE)
 	{
 		if (resource.getMultiLevel())
 		{
 			//send multivalue json
-			std::string pl = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
-			respond(c, COAP_SUCCESS_CONTENT, pl, MULTI_VALUE_FORMAT);
+			std::string payload = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
+
+#if MULTI_VALUE_FORMAT == FORMAT_JSON
+			//std::string payload = json::createJSON_Resource(uri, resource);
+#else
+			std::string payload = json::createJSON_Resource(uri, resource);
+#endif
+
+			respond(c, COAP_SUCCESS_CONTENT, payload, MULTI_VALUE_FORMAT);
 
 		}
 		else
 		{
-			//send value
-			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), SINGLE_VALUE_FORMAT);
+			std::string payload;
+			if (value_format == SINGLE_VALUE_FORMAT)
+			{
+#if SINGLE_VALUE_FORMAT == FORMAT_PLAIN_TEXT
+				payload = resource.getValue(uri->multi_level_id);
+#else
+				payload = json::createJSON_Resource(uri, resource);
+#endif
+			}
+			else
+			{
+#if MULTI_VALUE_FORMAT == FORMAT_JSON
+				payload = json::createJSON_Resource(uri, resource);
+#else
+				payload = json::createJSON_Resource(uri, resource);
+#endif
+			}
+
+			respond(c, COAP_SUCCESS_CONTENT, payload, value_format);
 
 		}
 	}
@@ -678,20 +726,37 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 	{
 		if (resource.getMultiLevel())
 		{
-			//send value
-			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), SINGLE_VALUE_FORMAT);
+			std::string payload;
+			if (value_format == SINGLE_VALUE_FORMAT)
+			{
+#if SINGLE_VALUE_FORMAT == FORMAT_PLAIN_TEXT
+				payload = resource.getValue(uri->multi_level_id);
+#else
+				payload = json::createJSON_Resource(uri, resource);
+#endif
+		}
+			else
+			{
+#if MULTI_VALUE_FORMAT == FORMAT_JSON
+				payload = json::createJSON_Resource(uri, resource);
+#else
+				payload = json::createJSON_Resource(uri, resource);
+#endif
+			}
+
+			respond(c, COAP_SUCCESS_CONTENT, payload, value_format);
 		}
 		else
 		{
 			//send error
-			respond(c, COAP_C_ERR_BAD_REQUEST, std::string("This resource is not a multiresoure."));
+			respond(c, COAP_C_ERR_BAD_REQUEST, std::string("This resource is not a multiresource."));
 		}
 	}
 }
 
-bool LWM2M_Client::check_response_format(CoAP_message_t* c)
+bool LWM2M_Client::check_message_format(CoAP_message_t* c, uint16_t option)
 {
-	std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
+	std::string s = CoAP_get_option_string(c, option);
 	uint16_t value_format = 0;
 	if (s != "0")
 	{

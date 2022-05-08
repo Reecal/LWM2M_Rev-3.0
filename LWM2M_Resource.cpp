@@ -42,3 +42,27 @@ bool LWM2M_Resource::value_exists(uint8_t value_depth)
 	if (value_depth <= next_value_ptr) return true;
 	return false;
 }
+
+void LWM2M_Resource::update_resource(std::string res_val, uint8_t depth)
+{
+	if (type == TYPE_INT)
+	{
+		values[depth].int_value = stoi(res_val);
+		string_val[depth] = res_val;
+	}
+	else if(type == TYPE_FLOAT)
+	{
+		values[depth].float_value = stof(res_val);
+		string_val[depth] = res_val;
+	}
+	else if (type == TYPE_BOOLEAN)
+	{
+		values[depth].bool_value = res_val == "1" ? true : false;
+		string_val[depth] = res_val;
+	}
+	else
+	{
+		strcpy_s(string_value[depth], MAX_STRING_LENGTH, res_val.data());
+		string_val[depth] = res_val;
+	}
+}

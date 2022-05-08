@@ -20,7 +20,7 @@
 #include "BG77.h"
 
 //#define LOG_OUTPUT 1
-#define USE_BG77
+//#define USE_BG77
 
 #if LOG_OUTPUT == 1
 //#define LOG_ENTITY "\x1B[34mMain\033[0m"

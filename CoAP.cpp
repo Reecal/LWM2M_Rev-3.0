@@ -330,14 +330,14 @@ uint8_t CoAP_parse_message(CoAP_message_t* output, char data[], uint16_t msgLen)
 
 
 	//PAYLOAD
-	string payload = "";
+	//string payload = "";
 	if (currentByte < msgLen) {
-		payload = convertToString(&data[currentByte], msgLen - currentByte);
+		output->payload = convertToString(&data[currentByte], msgLen - currentByte);
 	}
 	
 	output->header = hdr;
 	output->options = options;
-	output->payload = payload;
+	//output->payload = payload;
 
 	CoAP_raw_t craw = { 0 };
 	craw.message_total = msgLen;
@@ -420,6 +420,14 @@ string CoAP_get_option_string(CoAP_message_t* coap_struct, uint8_t option_to_get
 				output += '0';
 			}
 			else if(option_to_get == COAP_OPTIONS_ACCEPT)
+			{
+				if (option.option_length == 0)
+				{
+					output = "0";
+					return output;
+				}
+			}
+			else if (option_to_get == COAP_OPTIONS_CONTENT_FORMAT)
 			{
 				if (option.option_length == 0)
 				{
