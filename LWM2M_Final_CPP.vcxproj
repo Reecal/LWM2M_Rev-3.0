@@ -139,20 +139,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BG77.cpp" />
     <ClCompile Include="CoAP.cpp" />
     <ClCompile Include="Logger_xdvora2g.cpp" />
     <ClCompile Include="LWM2M_Client.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerformaceTimer.cpp" />
+    <ClCompile Include="SerialComm.cpp" />
     <ClCompile Include="userInput.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BG77.h" />
     <ClInclude Include="CoAP.hpp" />
     <ClInclude Include="Logger_xdvora2g.h" />
     <ClInclude Include="LWM2M_Client.h" />
     <ClInclude Include="LWM2M_Defines.h" />
     <ClInclude Include="PerformanceTimer.h" />
+    <ClInclude Include="SerialComm.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

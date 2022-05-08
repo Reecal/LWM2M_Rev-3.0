@@ -19,6 +19,9 @@
 
 #define CME_ERROR -3
 
+#define BG77_INCOMING_DATA 1
+#define BG77_NO_DATA 0
+
 
 
 
@@ -43,6 +46,13 @@ public:
 	int changePIN(int newPin, int oldPin);
 
 	int sendRAW(const char input[], char* outputBuffer);
+
+	int readData(char* outputBuffer);
+	int pullData(char* outputBuffer);
+	int activatePDP(uint8_t PDP_index);
+	int openSocket(uint8_t PDP_index, uint8_t port);
+	int deactivatePDP(uint8_t PDP_index);
+	int closeSocket(uint8_t PDP_index);
 
 
 

@@ -234,7 +234,7 @@ uint8_t LWM2M_Client::update_routine()
 			#endif
 		}
 
-		else if ((lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT == 0)
+		else if (((lastUpdate + lifetime) - sys_time) % UPDATE_RETRY_TIMEOUT == 0)
 		{
 			return send_update();
 		}
@@ -380,13 +380,16 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 
 
 
-
-	CoAP_message_t error_message;
-	int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-	CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_C_ERR_NOT_FOUND, c->header.messageID, c->header.token);
-	CoAP_set_payload(&error_message, "Not found!");
-	CoAP_assemble_message(&error_message);
-	send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
+	if(c->header.type != COAP_ACK)
+	{
+		CoAP_message_t error_message;
+		int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+		CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_C_ERR_NOT_FOUND, c->header.messageID, c->header.token);
+		CoAP_set_payload(&error_message, "Not found!");
+		CoAP_assemble_message(&error_message);
+		send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
+	}
+	
 
 	return 0;
 }
@@ -411,4 +414,23 @@ void LWM2M_Client::print_message_info(CoAP_message_t* c)
 	std::cout << "URI_PATH: " << CoAP_get_option_string(c, COAP_OPTIONS_URI_PATH) << std::endl;
 	std::cout << "URI_QUERY: " << CoAP_get_option_string(c, COAP_OPTIONS_URI_QUERY) << std::endl;
 	std::cout << "OBSERVE: " << CoAP_get_option_string(c, COAP_OPTIONS_OBSERVE) << std::endl;*/
+}
+
+uint8_t LWM2M_Client::client_deregister() {
+	//cout << "Client deregister" << endl;
+	//cout << LWM2M_Client::registration_status << endl;
+	if (client_status == NOT_REGISTERED) {
+		LOG_WARNING("client_deregister: Client is not registered to any server");
+		//cout << "Client is not registered to any server" << endl;
+		return 1;
+	}
+	CoAP_message_t deregister_message;
+	CoAP_tx_setup(&deregister_message, COAP_CON, 8, COAP_METHOD_DELETE);
+	CoAP_add_option(&deregister_message, COAP_OPTIONS_URI_PATH, "rd");
+	CoAP_add_option(&deregister_message, COAP_OPTIONS_URI_PATH, std::string(reg_id));
+	CoAP_assemble_message(&deregister_message);
+	send((char*)(deregister_message.raw_data.masg.data()), deregister_message.raw_data.message_total);
+	client_status = NOT_REGISTERED;
+	LOG_INFO("Deregistration message sent.");
+	return 0;
 }

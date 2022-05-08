@@ -17,8 +17,10 @@
 #include "userInput.cpp"
 #include "LWM2M_Defines.h"
 #include "Logger_xdvora2g.h"
+#include "BG77.h"
 
 //#define LOG_OUTPUT 1
+//#define USE_BG77
 
 #if LOG_OUTPUT == 1
 //#define LOG_ENTITY "\x1B[34mMain\033[0m"
@@ -47,6 +49,7 @@ uint8_t send_fc(char* data, uint16_t data_len);
 void application_timer(LWM2M_Client& client, bool& applicationRun);
 
 SOCKET s;
+BG77 bg(false);
 
 int main()
 {
@@ -80,19 +83,56 @@ int main()
     int ms_ctr = 0;
     int num_ovf = 0;
     main_loop_bool = true;
+   
+#if defined(USE_BG77)
+    
+    if (bg.checkCommunication() != BG77_SUCCESS)
+    {
+        std::cout << "BG77 not responding!\r\n";
+        while (1);
+    }
+    Sleep(1000);
+    bg.activatePDP(1);
+    //std::cout << "OUT : " << bg77_buffer << std::endl;
+    Sleep(500);
+    bg.openSocket(1, 9431);
+    //std::cout << "OUT : " << bg77_buffer << std::endl;
+    Sleep(500);
+
+#endif
+
     std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
     std::thread timerThread(application_timer, std::ref(client), std::ref(applicationRunApp));
+
     while (applicationRunApp)
     {
         client.loop();
     	char outputBuffer[1500];
 
+#if defined(USE_BG77)
+        if (bg.readData(outputBuffer) == BG77_INCOMING_DATA)
+        {
+            Sleep(100);
+            //std::cout << "Main pull \r\n";
+            int len = 1;
+            do
+            {
+                len = bg.pullData(outputBuffer);
+                if (len > 0) client.receive(outputBuffer, len);
+            } while (len != 0);
+        	
+            
+        }
+        Sleep(10);
+#else
         int num_bytes = recv(s, outputBuffer, 1500, 0);
         if (num_bytes > 0)
         {
             client.receive(outputBuffer, num_bytes);
-            
+
         }
+#endif
+        
         //client.loop();
         /*ms_ctr++;
         if (ms_ctr >= 10)
@@ -109,6 +149,13 @@ int main()
 
     userInterfaceThread.join();
     timerThread.join();
+    client.client_deregister();
+#if defined(USE_BG77)
+    /*bg.sendRAW("AT+QICLOSE=1", bg77_buffer);
+    bg.sendRAW("AT+QIDEACT=1", bg77_buffer);*/
+    bg.closeSocket(1);
+    bg.deactivatePDP(1);
+#endif
    
 }
 
@@ -125,7 +172,18 @@ uint8_t rebootfunc(uint8_t d)
 
 uint8_t send_fc(char* data, uint16_t data_len)
 {
+#if defined(USE_BG77)
+    char bg77_buffer[1500];
+    sprintf_s(bg77_buffer, "AT+QISEND=1,%d,\"62.245.65.221\",9431", data_len);
+    bg.sendRAW(bg77_buffer, bg77_buffer);
+    //std::cout << "OUT : " << bg77_buffer << std::endl;
+    bg.sendRAW(data, bg77_buffer);
+    //std::cout << "OUT : " << bg77_buffer << std::endl;
+    return 0;
+#else
     return send(s, data, data_len, 0);
+#endif
+    
 }
 
 void application_timer(LWM2M_Client& client, bool& applicationRun)

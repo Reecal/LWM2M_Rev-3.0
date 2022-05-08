@@ -36,6 +36,12 @@
     <ClCompile Include="Logger_xdvora2g.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BG77.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialComm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PerformanceTimer.h">
@@ -54,6 +60,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Logger_xdvora2g.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BG77.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SerialComm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
