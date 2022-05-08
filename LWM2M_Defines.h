@@ -1,11 +1,14 @@
 #pragma once
-
+#include "CoAP.hpp"
 
 #define MAX_OBJECTS 10
 #define MAX_INSTANCES 2
 #define MAX_RESOURCES 22
 #define MAX_RESOURCE_PARTS 5
 #define MAX_STRING_LENGTH 40
+
+#define SINGLE_VALUE_FORMAT FORMAT_PLAIN_TEXT
+#define MULTI_VALUE_FORMAT	FORMAT_JSON
 
 //#define USE_DTLS
 
@@ -20,7 +23,7 @@
 #define AUTO_REGISTER //Automatically generates registration messages and either sends them, depending on autosend, or schedules send into a buffer
 
 //Supported formats
-#define PLAIN_TEXT
+//#define PLAIN_TEXT
 //#define JSON_OMA
 //#define TLV
 

@@ -70,6 +70,8 @@ private:
 	void lwm_read(CoAP_message_t* c, URI_Path_t* uri);
 	void lwm_write(CoAP_message_t* c, URI_Path_t* uri);
 	void lwm_execute(CoAP_message_t* c, URI_Path_t* uri);
+	void respond(CoAP_message_t* c, uint8_t return_code, std::string payload, uint16_t payload_format = 1);
+	void send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resource& resource);
 
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));

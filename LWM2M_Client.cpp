@@ -614,55 +614,12 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
 		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == READ_ONLY)
 		{
-			if (uri->path_depth == REQUEST_RESOURCE)
-			{
-				if (resource.getMultiLevel())
-				{
-					//send multivalue json
-					std::string pl = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
-					CoAP_message_t error_message;
-					int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-					CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
-					CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_JSON);
-					CoAP_set_payload(&error_message, pl);
-					CoAP_assemble_message(&error_message);
-					send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
-				}
-				else
-				{
-					//send value
-					CoAP_message_t error_message;
-					int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-					CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
-					CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
-					CoAP_set_payload(&error_message, resource.getValue());
-					CoAP_assemble_message(&error_message);
-					send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
-				}
-			}
-			else //Request multi value resource
-			{
-				if (resource.getMultiLevel())
-				{
-					//send value
-					CoAP_message_t error_message;
-					int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-					CoAP_tx_setup(&error_message, message_type, c->header.token_length, COAP_SUCCESS_CONTENT, c->header.messageID, c->header.token);
-					CoAP_add_option(&error_message, COAP_OPTIONS_CONTENT_FORMAT, FORMAT_PLAIN_TEXT);
-					CoAP_set_payload(&error_message, resource.getValue(uri->multi_level_id));
-					CoAP_assemble_message(&error_message);
-					send((char*)(error_message.raw_data.masg.data()), error_message.raw_data.message_total);
-				}
-				else
-				{
-					//send error
-				}
-			}
-			
+			send_resource(c, uri, resource);
 		}
 		else
 		{
 			//bad permission
+			respond(c, COAP_C_ERR_FORBIDDEN, std::string("Invalid access permission."));
 		}
 	}
 
@@ -676,4 +633,48 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
 {
 	
+}
+
+void LWM2M_Client::respond(CoAP_message_t* c, uint8_t return_code, std::string payload, uint16_t payload_format)
+{
+	CoAP_message_t response;
+	int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
+	CoAP_tx_setup(&response, message_type, c->header.token_length, return_code, c->header.messageID, c->header.token);
+	if (payload_format != 1) CoAP_add_option(&response, COAP_OPTIONS_CONTENT_FORMAT, payload_format);
+	CoAP_set_payload(&response, payload);
+	CoAP_assemble_message(&response);
+	send((char*)(response.raw_data.masg.data()), response.raw_data.message_total);
+}
+
+void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resource& resource)
+{
+	if (uri->path_depth == REQUEST_RESOURCE)
+	{
+		if (resource.getMultiLevel())
+		{
+			//send multivalue json
+			std::string pl = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
+			respond(c, COAP_SUCCESS_CONTENT, pl, FORMAT_JSON);
+
+		}
+		else
+		{
+			//send value
+			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), FORMAT_PLAIN_TEXT);
+
+		}
+	}
+	else //Request multi value resource
+	{
+		if (resource.getMultiLevel())
+		{
+			//send value
+			respond(c, COAP_SUCCESS_CONTENT, resource.getValue(uri->multi_level_id), FORMAT_PLAIN_TEXT);
+		}
+		else
+		{
+			//send error
+			respond(c, COAP_C_ERR_BAD_REQUEST, std::string("This resource is not a multiresoure."));
+		}
+	}
 }
