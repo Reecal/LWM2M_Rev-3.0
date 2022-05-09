@@ -82,8 +82,11 @@ int main()
     client.addResource(4, 0, 5, TYPE_STRING, READ_ONLY, false, (char*) "192.168.10.1");
     client.addResource(4, 0, 7, TYPE_STRING, READ_ONLY, false, (char*) "lpwa.vodafone.iot");
    
+    client.createObject(3342, 0);
+    client.addResource(3342, 0, 5500, TYPE_BOOLEAN, READ_ONLY, false, true);
 
-
+    client.createObject(3328, 0);
+    client.addResource(3328, 0, 5601, TYPE_FLOAT, READ_ONLY, false, (float)3.1452);
 
     
 
@@ -96,8 +99,10 @@ int main()
     
 
     //std::string ipAddr = "192.168.10.142";
-	std::string ipAddr = "192.168.204.128";
-    int port = 5683;
+	//std::string ipAddr = "192.168.204.128";
+    //int port = 5683;
+    std::string ipAddr = "62.245.65.221";
+    int port = 9431;
     const std::string epName = "C++_123";
 
     initializeSocket(ipAddr, port, 5, s);

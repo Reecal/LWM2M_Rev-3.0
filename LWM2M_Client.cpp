@@ -41,7 +41,7 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 {
 	LWM2M_Object obj1(1);
 	obj1.add_resource(0, TYPE_INT, READ_ONLY, false, (int) 25);
-	obj1.add_resource(1, TYPE_INT, READ_WRITE, false, (int)300);
+	obj1.add_resource(1, TYPE_INT, READ_WRITE, false, (int)30);
 	obj1.add_resource(6, TYPE_BOOLEAN, READ_WRITE, false, true);
 	obj1.add_resource(7, TYPE_STRING, READ_WRITE, false, (char*) "U");
 	obj1.add_executable_resource(8);
