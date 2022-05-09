@@ -67,6 +67,7 @@ bool LWM2M_Object::resource_exists(uint16_t rsrc_id, uint16_t sub_res_id)
 {
 	for (uint8_t search_var = 0; search_var < next_resource_ptr; search_var++)
 	{
+		//TODO: Check subresource as well
 		if (resource_ids[search_var] == rsrc_id)
 			return true;
 	}

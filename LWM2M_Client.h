@@ -15,6 +15,22 @@ class LWM2M_Client
 		uint16_t data_length;
 	};
 
+	uint8_t number_of_observed_entities = 0;
+
+	struct Observed_Entity_t
+	{
+		URI_Path_t uri;
+		uint8_t observe_depth = 0;
+		uint16_t observe_mid = 0;
+		uint16_t notify_min = 5;
+		uint16_t notify_max = 10;
+		uint16_t observed_val = 0;
+		uint16_t last_notify_sent = 0;
+		uint8_t observe_token[8] = { 0 };
+		uint8_t observe_timer = 0;
+		bool currently_observed = false;
+	};
+
 	
 
 
@@ -38,10 +54,11 @@ private:
 	long long lastUpdate = 0;
 	long long sys_time = 0;
 
-	
+	Observed_Entity_t observed_entities[MAX_OBSERVED_ENTITIES];
 	
 	const char* endpoint_name;
 	char reg_id[12];
+
 
 
 	uint8_t next_obj_ptr = 0;
@@ -74,6 +91,8 @@ private:
 	void respond(CoAP_message_t* c, uint8_t return_code, std::string payload = "", uint16_t payload_format = 1);
 	void send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resource& resource);
 	bool check_message_format(CoAP_message_t* c, uint16_t option);
+	uint8_t add_observe_entity(CoAP_message_t* c, URI_Path_t* uri);
+	void observe_routine();
 
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)());

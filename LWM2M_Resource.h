@@ -31,6 +31,7 @@ union Value_t
 class LWM2M_Resource
 {
 private:
+
 	uint16_t resource_id;
 	bool multi_level;
 	uint8_t type;
@@ -40,6 +41,9 @@ private:
 	char string_value[MAX_RESOURCE_PARTS][MAX_STRING_LENGTH];
 	uint8_t(*execute_cb)();
 	std::string string_val[MAX_RESOURCE_PARTS];
+
+	
+	bool value_changed = false;
 	
 
 
@@ -74,6 +78,11 @@ public:
 	bool getMultiLevel()
 	{
 		return multi_level;
+	}
+
+	bool getValueChanged()
+	{
+		return value_changed;
 	}
 
 	std::string getValue(int depth = 0);
