@@ -82,8 +82,6 @@ private:
 	void registrationInterfaceHandle(CoAP_message_t* c);
 	void bootstrapInterfaceHandle(CoAP_message_t* c);
 	void deviceManagementAndInformationReportingInterfaceHandle(CoAP_message_t* c);
-	bool object_exists(uint16_t object_id);
-	bool object_exists(uint16_t object_id, uint16_t instance_id);
 	bool check_URI(URI_Path_t* uri);
 	void lwm_read(CoAP_message_t* c, URI_Path_t* uri);
 	void lwm_write(CoAP_message_t* c, URI_Path_t* uri);
@@ -108,7 +106,8 @@ public:
 	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value);
 	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value);
 	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)());
-
+	bool object_exists(uint16_t object_id);
+	bool object_exists(uint16_t object_id, uint16_t instance_id);
 	void updateResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, std::string value, uint8_t depth = 0);
 
 	void register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len));

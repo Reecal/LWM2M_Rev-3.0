@@ -163,6 +163,7 @@
     <ClInclude Include="LWM2M_Resource.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="SerialComm.h" />
+    <ClInclude Include="userInput.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

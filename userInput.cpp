@@ -1,13 +1,8 @@
 #pragma once
 
-#include <iostream>
-#include <string>
-#include <sstream>
+#include "userInput.h"
 
-#include "LWM2M_Client.h"
-#include "Utils.h"
-
-inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun) {
+void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
     {
 
         //client.printObjs();
@@ -111,12 +106,12 @@ inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicati
                                 }
 
                                 int object_id = stoi(token);
-                                std::cout << "Object ID: " << object_id << std::endl;
-                                /*if (!client.object_exists(object_id))
+                                //std::cout << "Object ID: " << object_id << std::endl;
+                                if (!client.object_exists(object_id))
                                 {
                                     std::cout << "Object with this object ID does not exist." << std::endl;
                                     continue;
-                                }*/
+                                }
 
                                 if (ss.good())
                                 {
@@ -130,12 +125,12 @@ inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicati
 
 
                                     int instance_id = stoi(token);
-                                    std::cout << "Instance ID: " << instance_id << std::endl;
-                                    /*if (!client.objects[object_id].instance_exists(instance_id))
+                                    //std::cout << "Instance ID: " << instance_id << std::endl;
+                                    if (!client.object_exists(object_id,instance_id))
                                     {
                                         std::cout << "Instance with this instance ID does not exist." << std::endl;
                                         continue;
-                                    }*/
+                                    }
 
 
                                     if (ss.good())
@@ -149,15 +144,21 @@ inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicati
                                         }
 
                                         int resource_id = stoi(token);
-                                        std::cout << "Resource ID: " << resource_id << std::endl;
+                                        //std::cout << "Resource ID: " << resource_id << std::endl;
 
-                                        /*if (!client.objects[object_id].instances[instance_id].resource_exists(resource_id))
+                                        if (!client.getObject(object_id,instance_id).resource_exists(resource_id))
                                         {
                                             std::cout << "Resource with this resource ID does not exist." << std::endl;
                                             continue;
                                         }
 
-                                        client.printSingleResource(object_id, instance_id, resource_id);*/
+                                        std::cout << "Resource /" << object_id << "/" << instance_id << "/" << resource_id << std::endl;
+                                        std::cout << "\tType: " << client.getObject(object_id, instance_id).getResource(resource_id).getType() << std::endl;
+                                        std::cout << "\tMultivalue: " << client.getObject(object_id, instance_id).getResource(resource_id).getMultiLevel() << std::endl;
+                                        std::cout << "\Permission: " << client.getObject(object_id, instance_id).getResource(resource_id).getPermissions() << std::endl;
+                                        std::cout << "\Value: " << client.getObject(object_id, instance_id).getResource(resource_id).getValue(0) << std::endl;
+                                        
+                                    	//client.printSingleResource(object_id, instance_id, resource_id);
 
                                     }
                                 }
@@ -242,40 +243,28 @@ inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicati
                                             //-------------------------------------------------------------- SET:RESOURCE:OBJECT_ID:INSTANCE_ID:RESOURCE_ID:MESSAGE&UPDATE
 
                                             ss >> token;
-                                            /* if (isIntegerStd(token) && client.objects[object_id].instances[instance_id].getResource(resource_id)->value_type == TYPE_INT)
+                                            if (isIntegerStd(token) && client.getObject(object_id, instance_id).getResource(resource_id).getType() == TYPE_INT)
                                             {
-                                                bool isLifetime = object_id == 1 && instance_id == 0 && resource_id == 1;
-                                                if (isLifetime)
-                                                {
-                                                    m.lock();
-                                                    client.lifetime = stoi(token);
-                                                    client.update_resource(object_id, instance_id, resource_id, stoi(token));
-                                                    //client.client_send_update();
-                                                    client.externalUpdateRequest = true;
-                                                    m.unlock();
-                                                }
-                                                else
-                                                {
-                                                    client.update_resource(object_id, instance_id, resource_id, stoi(token));
-                                                }
+                                            	client.updateResource(object_id, instance_id, resource_id, token);
+                                                
 
 
 
                                             }
-                                            else if (isFloat(token) && client.objects[object_id].instances[instance_id].getResource(resource_id)->value_type == TYPE_FLOAT)
+                                            else if (isFloat(token) && client.getObject(object_id, instance_id).getResource(resource_id).getType() == TYPE_FLOAT)
                                             {
-                                                client.update_resource(object_id, instance_id, resource_id, stof(token));
+                                                client.updateResource(object_id, instance_id, resource_id, token);
 
                                             }
-                                            else if ((token == "true" || token == "false") && client.objects[object_id].instances[instance_id].getResource(resource_id)->value_type == TYPE_BOOLEAN)
+                                            else if ((token == "true" || token == "false") && client.getObject(object_id, instance_id).getResource(resource_id).getType() == TYPE_BOOLEAN)
                                             {
                                                 if (token == "true")
                                                 {
-                                                    client.update_resource(object_id, instance_id, resource_id, true);
+                                                    client.updateResource(object_id, instance_id, resource_id, std::string("1"));
                                                 }
                                                 else
                                                 {
-                                                    client.update_resource(object_id, instance_id, resource_id, false);
+                                                    client.updateResource(object_id, instance_id, resource_id, std::string("0"));
                                                 }
                                             }
                                             else
@@ -289,8 +278,8 @@ inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicati
 
                                                     token.erase(stringLen - 1, 1);
                                                 }
-                                                client.update_resource(object_id, instance_id, resource_id, token);
-                                            }*/
+                                                client.updateResource(object_id, instance_id, resource_id, token);
+                                            }
 
                                             std::cout << "Resource updated" << std::endl;
 
@@ -346,4 +335,3 @@ inline void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicati
         }
         std::cout << "Thread finish!" << std::endl;
     }
-}

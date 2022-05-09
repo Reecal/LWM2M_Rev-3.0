@@ -916,7 +916,7 @@ uint8_t LWM2M_Client::add_observe_entity(CoAP_message_t* c, URI_Path_t* uri)
 	obs.currently_observed = true;
 	obs.uri = *uri;
 	obs.last_notify_sent = 0;
-	obs.observe_mid = c->header.messageID+1;
+	obs.observe_mid = rand();//c->header.messageID+1;
 	obs.observed_val = rand();
 
 	for(uint8_t i = 0; i < c->header.token_length; i++)
@@ -946,7 +946,8 @@ void LWM2M_Client::observe_routine()
 			bool is_over_max = observed_entities[i].last_notify_sent >= observed_entities[i].notify_max;
 			bool value_changed = getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getValueChanged();
 			bool is_over_min = observed_entities[i].last_notify_sent >= observed_entities[i].notify_min;
-			bool notify_should_be_sent = is_over_max || (value_changed && is_over_min);
+			bool already_sent = observed_entities[i].last_notify_sent == 0;
+			bool notify_should_be_sent = is_over_max || (value_changed && is_over_min) && !already_sent;
 			if (notify_should_be_sent)
 			{
 				CoAP_Message_t notify_message;

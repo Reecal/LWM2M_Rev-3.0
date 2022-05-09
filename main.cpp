@@ -14,7 +14,7 @@
 #include "Utils.h"
 #include "LWM2M_Client.h"
 #include "PerformanceTimer.h"
-#include "userInput.cpp"
+#include "userInput.h"
 #include "LWM2M_Defines.h"
 #include "Logger_xdvora2g.h"
 #include "BG77.h"
@@ -68,6 +68,21 @@ int main()
     client.addResource(3441, 0, 1130, TYPE_FLOAT, READ_WRITE, true, (float)3.14159);
     client.addResource(3441, 0, 1140, TYPE_BOOLEAN, READ_WRITE, true, true);
     client.updateResource(3441, 0, 1110, "Hello", 1);
+
+
+    client.createObject(4, 0);
+#if defined(USE_BG77)
+    client.addResource(4, 0, 0, TYPE_INT, READ_ONLY, false,(int) 7);
+#else
+    client.addResource(4, 0, 0, TYPE_INT, READ_ONLY, false, (int)41);
+#endif
+    client.addResource(4, 0, 1, TYPE_INT, READ_ONLY, true, (int)20);
+    client.addResource(4, 0, 2, TYPE_INT, READ_ONLY, false, (int)-70);
+    client.addResource(4, 0, 4, TYPE_STRING, READ_ONLY, false, (char*)"192.168.10.128");
+    client.addResource(4, 0, 5, TYPE_STRING, READ_ONLY, false, (char*) "192.168.10.1");
+    client.addResource(4, 0, 7, TYPE_STRING, READ_ONLY, false, (char*) "lpwa.vodafone.iot");
+   
+
 
 
     
