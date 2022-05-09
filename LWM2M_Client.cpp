@@ -35,11 +35,29 @@ long long last_update_sent = 0;
 char* lw_buffer;
 CoAP_Message_t last_message;
 
-LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t)) : endpoint_name(ep_name), reboot_cb(reb)
+uint8_t(*send_update_cb)();
+
+LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name(ep_name), reboot_cb(reb)
 {
-	object_ids[next_obj_ptr] = 3;
+	LWM2M_Object obj1(1);
+	obj1.add_resource(0, TYPE_INT, READ_ONLY, false, (int) 25);
+	obj1.add_resource(1, TYPE_INT, READ_WRITE, false, (int)300);
+	obj1.add_resource(6, TYPE_BOOLEAN, READ_WRITE, false, true);
+	obj1.add_resource(7, TYPE_STRING, READ_WRITE, false, (char*) "U");
+	obj1.add_executable_resource(8);
+	object_ids[next_obj_ptr] = 1;
+	objects[next_obj_ptr] = obj1;
+	next_obj_ptr++;
+
+
+
 	LWM2M_Object obj3(3);
-	obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"Your mom");
+	obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"Diploma Thesis Radim Dvorak");
+	obj3.add_resource(3, TYPE_STRING, READ_ONLY, false, (char*)"Rev 3.0");
+	obj3.add_executable_resource(4, reboot_cb);
+	obj3.add_resource(11, TYPE_INT, READ_ONLY, true, 0);
+	obj3.add_resource(16, TYPE_STRING, READ_ONLY, false, (char*) "U");
+	object_ids[next_obj_ptr] = 3;
 	objects[next_obj_ptr] = obj3;
 	next_obj_ptr++;
 }
@@ -151,19 +169,34 @@ uint8_t LWM2M_Client::send_registration()
 		*/
 
 	char payload[] = "</>;ct=\"60 11543\";rt=\"oma.lwm2m\",</1/0>,</3/0>,</6/0>,</3303>,</3303/0>,</3441/0>";
+	std::string pl = "</>;ct=";
+#if MULTI_VALUE_FORMAT == SINGLE_VALUE_FORMAT
+	pl += std::to_string(MULTI_VALUE_FORMAT);
+#else
+	pl += "\"" + std::to_string(SINGLE_VALUE_FORMAT) + " " + std::to_string(MULTI_VALUE_FORMAT) + "\"";
+#endif
+	pl += ";rt=\"oma.lwm2m\",";
+
+	for(uint8_t i = 0; i < next_obj_ptr; i++)
+	{
+		pl += "</";
+		pl += to_string(objects[i].getObject_id()) + "/" + std::to_string(objects[i].getInstance_id());
+		pl += ">";
+		if (i != next_obj_ptr - 1) pl += ",";
+	}
 
 	CoAP_message_t coap_message;
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_CONTENT_FORMAT, APPLICATION_LINK_FORMAT);
-	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "b=U");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "b=" + getObject(1).getResource(7).getValue());
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lwm2m=1.0");
-	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + to_string(lifetime));
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + getObject(1).getResource(1).getValue());
 	char epname[30];
 	sprintf_s(epname, "ep=%s", endpoint_name);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, epname);
 
-	CoAP_set_payload(&coap_message, payload);
+	CoAP_set_payload(&coap_message, pl);
 
 
 	CoAP_assemble_message(&coap_message);
@@ -195,7 +228,7 @@ uint8_t LWM2M_Client::send_update()
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, std::string(reg_id));
-	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + to_string(lifetime));
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + getObject(1).getResource(1).getValue());
 	CoAP_assemble_message(&coap_message);
 
 #if defined(AUTO_SEND)
@@ -228,7 +261,7 @@ uint8_t LWM2M_Client::update_routine()
 	{
 		//Try sending update again
 		//std::cout << "RETRY: " << (lastUpdate + lifetime) << " : " << (lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT << std::endl;
-		if (sys_time >= (lastUpdate + lifetime))
+		if (sys_time >= (lastUpdate + stoi(getObject(1).getResource(1).getValue())))
 		{
 			client_status = NOT_REGISTERED;
 
@@ -237,7 +270,7 @@ uint8_t LWM2M_Client::update_routine()
 			#endif
 		}
 
-		else if (((lastUpdate + lifetime) - sys_time) % UPDATE_RETRY_TIMEOUT == 0)
+		else if (((lastUpdate + stoi(getObject(1).getResource(1).getValue())) - sys_time) % UPDATE_RETRY_TIMEOUT == 0)
 		{
 			if (sys_time != last_update_sent)
 			{
@@ -249,7 +282,7 @@ uint8_t LWM2M_Client::update_routine()
 	}
 	else
 	{
-		if (sys_time >= (lastUpdate + lifetime - UPDATE_HYSTERESIS))
+		if (sys_time >= (lastUpdate + stoi(getObject(1).getResource(1).getValue()) - UPDATE_HYSTERESIS))
 		{
 			return send_update();
 		}
@@ -552,7 +585,7 @@ bool LWM2M_Client::check_URI(URI_Path_t* uri)
 void LWM2M_Client::createObject(uint16_t object_id, uint8_t instance_id)
 {
 	object_ids[next_obj_ptr] = object_id;
-	LWM2M_Object obj(3, instance_id);
+	LWM2M_Object obj(object_id, instance_id);
 	objects[next_obj_ptr] = obj;
 	next_obj_ptr++;
 }
@@ -620,6 +653,30 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 			respond(c, COAP_C_ERR_FORBIDDEN, std::string("Invalid access permission."));
 		}
 	}
+
+
+	else if (uri->path_depth == REQUEST_INSTANCE)
+	{
+		LWM2M_Object& instance_object = getObject(uri->obj_id, uri->instance_id);
+#if MULTI_VALUE_FORMAT == FORMAT_JSON
+		std::string payload = json::createJSON_Instance(instance_object);
+#else
+		std::string payload = json::createJSON_Instance(instance_object);
+#endif
+		respond(c, COAP_SUCCESS_CONTENT, payload, MULTI_VALUE_FORMAT);
+	}
+
+
+	else if (uri->path_depth == REQUEST_OBJECT)
+	{
+		LWM2M_Object& object = getObject(uri->obj_id);
+#if MULTI_VALUE_FORMAT == FORMAT_JSON
+		std::string payload = json::createJSON_Object(object);
+#else
+		std::string payload = json::createJSON_Object(object);
+#endif
+		respond(c, COAP_SUCCESS_CONTENT, payload, MULTI_VALUE_FORMAT);
+	}
 	//TODO:Add read for instances and objects
 
 }
@@ -642,7 +699,6 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
 		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == WRITE_ONLY)
 		{
-			//send_resource(c, uri, resource);
 			getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).update_resource(c->payload, uri->multi_level_id);
 			respond(c, COAP_SUCCESS_CHANGED);
 		}
@@ -658,7 +714,30 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 
 void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
 {
-	
+	if (uri->path_depth >= REQUEST_RESOURCE)
+	{
+		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
+		if (resource.getPermissions() == EXECUTABLE && resource.getType() == TYPE_EXECUTABLE)
+		{
+			respond(c, COAP_SUCCESS_CHANGED);
+
+			//Handle special cases
+			if (uri->obj_id == 1 && uri->resource_id == 8)
+			{
+				send_update();
+			}
+			else
+			{
+				getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).execute();
+			}
+			
+		}
+		else
+		{
+			//bad permission
+			respond(c, COAP_C_ERR_BAD_REQUEST, std::string("Invalid URI."));
+		}
+	}
 }
 
 void LWM2M_Client::respond(CoAP_message_t* c, uint8_t return_code, std::string payload, uint16_t payload_format)

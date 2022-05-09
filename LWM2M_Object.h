@@ -23,7 +23,7 @@ public:
 	void add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value);
 	void add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value);
 	void add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value);
-	void add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)());
+	void add_executable_resource(uint16_t resource_id, uint8_t(*execute_func)() = nullptr);
 
 
 	LWM2M_Resource& getResource(uint16_t rsrc_id);

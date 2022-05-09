@@ -49,13 +49,13 @@ private:
 	LWM2M_Object objects[MAX_OBJECTS*MAX_INSTANCES];
 
 
-	uint8_t(*reboot_cb)(uint8_t);
+	uint8_t(*reboot_cb)();
 	uint8_t(*send_cb)(char* data, uint16_t data_len);
 
 	uint8_t schedule_tx(char* data);
 	uint16_t getRxData(char*& outputBuffer);
 	uint8_t send_registration();
-	uint8_t send_update();
+	
 	uint8_t update_routine();
 	uint8_t check_registration_message(CoAP_message_t* c);
 	uint8_t check_update_message(CoAP_message_t* c);
@@ -76,7 +76,8 @@ private:
 	bool check_message_format(CoAP_message_t* c, uint16_t option);
 
 public:
-	LWM2M_Client(const char* ep_name, uint8_t(*reb)(uint8_t));
+	LWM2M_Client(const char* ep_name, uint8_t(*reb)());
+	uint8_t send_update();
 	uint8_t receive(char* data, uint16_t data_length);
 	LWM2M_Status getStatus();
 	uint8_t getTxData(char*& outputBuffer);

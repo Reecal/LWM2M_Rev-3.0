@@ -44,7 +44,7 @@ static bool applicationRunApp = true;
 extern bool main_loop_bool;
 
 void changeReference(const char*& ptr, const char* text);
-uint8_t rebootfunc(uint8_t d);
+uint8_t rebootfunc();
 uint8_t send_fc(char* data, uint16_t data_len);
 void application_timer(LWM2M_Client& client, bool& applicationRun);
 
@@ -178,9 +178,9 @@ void changeReference(const char*& ptr, const char* text)
     ptr = text;
 }
 
-uint8_t rebootfunc(uint8_t d)
+uint8_t rebootfunc()
 {
-    std::cout << "Reboot " << d << std::endl;
+    LOG_WARNING("Reboot: ");
     return 0;
 }
 

@@ -1,4 +1,5 @@
 #include "LWM2M_Object.h"
+#include "LWM2M_Client.h"
 
 LWM2M_Object::LWM2M_Object(uint16_t obj_id, uint8_t instance_id) : obj_id(obj_id), instance_id(instance_id)
 {
@@ -34,9 +35,9 @@ void LWM2M_Object::add_resource(uint16_t resource_id, uint8_t type, uint8_t perm
 	resources[next_resource_ptr] = res;
 	next_resource_ptr++;
 }
-void LWM2M_Object::add_resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)())
+void LWM2M_Object::add_executable_resource(uint16_t resource_id, uint8_t(*execute_func)())
 {
-	LWM2M_Resource res(resource_id, type, permissions, multi_level, execute_func);
+	LWM2M_Resource res(resource_id, TYPE_EXECUTABLE, EXECUTABLE, false, execute_func);
 	resource_ids[next_resource_ptr] = resource_id;
 	resources[next_resource_ptr] = res;
 	next_resource_ptr++;
