@@ -462,11 +462,8 @@ void LWM2M_Client::print_message_info(CoAP_message_t* c)
 }
 
 uint8_t LWM2M_Client::client_deregister() {
-	//cout << "Client deregister" << endl;
-	//cout << LWM2M_Client::registration_status << endl;
 	if (client_status == NOT_REGISTERED) {
 		LOG_WARNING("client_deregister: Client is not registered to any server");
-		//cout << "Client is not registered to any server" << endl;
 		return 1;
 	}
 	CoAP_message_t deregister_message;
@@ -699,7 +696,15 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
 		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == WRITE_ONLY)
 		{
+			
 			getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).update_resource(c->payload, uri->multi_level_id);
+
+			//Special cases:
+			if (uri->obj_id == 1 && uri->resource_id == 1)
+			{
+				send_update();
+			}
+			
 			respond(c, COAP_SUCCESS_CHANGED);
 		}
 		else
@@ -766,12 +771,12 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 		if (resource.getMultiLevel())
 		{
 			//send multivalue json
-			std::string payload = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
+			//std::string payload = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
 
 #if MULTI_VALUE_FORMAT == FORMAT_JSON
-			//std::string payload = json::createJSON_Resource(uri, resource);
+			std::string payload = json::createJSON_MVResource(uri, resource);
 #else
-			std::string payload = json::createJSON_Resource(uri, resource);
+			std::string payload = json::createJSON_MVResource(uri, resource);
 #endif
 
 			respond(c, COAP_SUCCESS_CONTENT, payload, MULTI_VALUE_FORMAT);
@@ -848,4 +853,15 @@ bool LWM2M_Client::check_message_format(CoAP_message_t* c, uint16_t option)
 	}
 
 	return true;
+}
+
+void LWM2M_Client::updateResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, std::string value, uint8_t depth)
+{
+	if(object_exists(object_id, instance_id))
+	{
+		if (getObject(object_id, instance_id).resource_exists(resource_id))
+		{
+			getObject(object_id, instance_id).getResource(resource_id).update_resource(value, depth);
+		}
+	}
 }

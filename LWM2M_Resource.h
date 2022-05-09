@@ -35,7 +35,7 @@ private:
 	bool multi_level;
 	uint8_t type;
 	uint8_t permissions;
-	uint8_t next_value_ptr = 0;
+	//uint8_t next_value_ptr = 0;
 	Value_t values[MAX_RESOURCE_PARTS];
 	char string_value[MAX_RESOURCE_PARTS][MAX_STRING_LENGTH];
 	uint8_t(*execute_cb)();
@@ -44,6 +44,9 @@ private:
 
 
 public:
+
+	uint8_t next_value_ptr = 0;
+
 	LWM2M_Resource(uint16_t resource_id = 0, uint8_t type = TYPE_INT, uint8_t permissions = READ_WRITE, bool multi_level = false);
 	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value = 0);
 	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value = false);

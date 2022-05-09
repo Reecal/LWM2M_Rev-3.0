@@ -265,6 +265,86 @@ std::string json::createJSON_Resource(URI_Path_t* uri, LWM2M_Resource& resource)
 	return output;
 }
 
+
+std::string json::createJSON_MVResource(URI_Path_t* uri, LWM2M_Resource& resource)
+{
+	if (resource.getPermissions() == WRITE_ONLY || resource.getPermissions() == EXECUTABLE) return "";
+	std::string output = "";
+	output += "{\"bn\":\"/";
+	output += std::to_string(uri->obj_id);
+	output += "/";
+	output += std::to_string(uri->instance_id);
+	output += "/";
+	output += std::to_string(resource.getResource_id());
+	
+	output += "/\",\"e\":[";
+
+	for (uint8_t index = 0; index < resource.next_value_ptr; index++)
+	{
+		std::string value_modifier;
+		std::string resource_value;
+
+		if (resource.getType() == TYPE_STRING)
+		{
+			value_modifier = "sv";
+			resource_value = resource.getValue(index);
+		}
+		else if (resource.getType() == TYPE_INT)
+		{
+			value_modifier = "v";
+			resource_value = resource.getValue(index);
+		}
+		else if (resource.getType() == TYPE_BOOLEAN)
+		{
+			value_modifier = "bv";
+			if (resource.getValue(index) == "1")
+			{
+				resource_value = "true";
+			}
+			else
+			{
+				resource_value = "false";
+			}
+		}
+		else if (resource.getType() == TYPE_FLOAT)
+		{
+			value_modifier = "v";
+			resource_value = resource.getValue(index);
+		}
+
+		output += "{\"n\":\"";
+		output += to_string(index);
+		output += "\",\"";
+		//output += "\"";
+		output += value_modifier;
+		if (resource.getType() == TYPE_STRING)
+		{
+			output += "\":\"" + resource_value + "\"}";
+		}
+		else
+		{
+			output += "\":" + resource_value + "}";
+		}
+
+		if (index != resource.next_value_ptr-1)
+		{
+			output += ",";
+		}
+		else
+		{
+			break;
+		}
+
+	}
+	
+	
+
+	output += "]}";
+
+	LOG_INFO("Assembled json: " + output);
+	return output;
+}
+
 /*LWM2M_Object& json::parseJSON(std::string jsonString)
 {
 	LWM2M_Object o;

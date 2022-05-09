@@ -67,6 +67,7 @@ int main()
     client.addResource(3441, 0, 1120, TYPE_INT, READ_WRITE, true, (int)1024);
     client.addResource(3441, 0, 1130, TYPE_FLOAT, READ_WRITE, true, (float)3.14159);
     client.addResource(3441, 0, 1140, TYPE_BOOLEAN, READ_WRITE, true, true);
+    client.updateResource(3441, 0, 1110, "Hello", 1);
 
 
     
