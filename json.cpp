@@ -127,6 +127,7 @@ std::string json::createJSON_Instance(LWM2M_Object& object)
 
 	for (auto& resource : object.resources)
 	{
+		if (resource.getType() == TYPE_EXECUTABLE) continue;
 		URI_Path_t up = { object.obj_id, object.getInstance_id(), 0 , 0, 2 };
 		output += createJSON_Resource(&up, resource);
 		//output += "}";
@@ -295,6 +296,20 @@ std::string json::getPartialResourceString(URI_Path_t* uri, LWM2M_Resource& reso
 	return output;
 }
 
+LWM2M_Resource json::parseJson_Resource(URI_Path_t* uri, std::string json_string)
+{
+	{
+		/*if (uri->path_depth == REQUEST_RESOURCE)
+		{
+			//tvar {"n":"cislo","bv":false}
+		}*/
+
+		int var_start = json_string.find("[{\"") + 3;
+		std::string substr = json_string.substr(var_start, 1);
+		LOG_INFO(substr);
+		return 0;
+	}
+}
 
 /*LWM2M_Object& json::parseJSON(std::string jsonString)
 {

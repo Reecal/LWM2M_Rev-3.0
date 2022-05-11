@@ -22,8 +22,8 @@ class LWM2M_Client
 		URI_Path_t uri;
 		uint8_t observe_depth = 0;
 		uint16_t observe_mid = 0;
-		uint16_t notify_min = 5;
-		uint16_t notify_max = 10;
+		uint16_t notify_min = 60;
+		uint16_t notify_max = 3600;
 		uint16_t observed_val = 0;
 		uint16_t last_notify_sent = 0;
 		uint8_t observe_token[8] = { 0 };

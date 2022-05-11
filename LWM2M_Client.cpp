@@ -722,7 +722,7 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 		return;
 	}
 
-	
+	json::parseJson_Resource(uri, c->payload);
 
 	if (uri->path_depth >= REQUEST_RESOURCE)
 	{
@@ -975,13 +975,6 @@ void LWM2M_Client::observe_routine()
 				CoAP_set_payload(&notify_message, payload);
 				CoAP_assemble_message(&notify_message);
 				send((char*)(notify_message.raw_data.masg.data()), notify_message.raw_data.message_total);
-				/*CoAP_message_t response;
-				int message_type = c->header.type == COAP_CON ? COAP_ACK : COAP_NON;
-				CoAP_tx_setup(&response, message_type, c->header.token_length, return_code, c->header.messageID, c->header.token);
-				if (payload_format != 1) CoAP_add_option(&response, COAP_OPTIONS_CONTENT_FORMAT, payload_format);
-				CoAP_set_payload(&response, payload);
-				CoAP_assemble_message(&response);
-				send((char*)(response.raw_data.masg.data()), response.raw_data.message_total);*/
 				observed_entities[i].last_notify_sent = 0;
 			}
 		}

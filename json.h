@@ -14,6 +14,11 @@ namespace json {
 	std::string createJSON_MVResource(URI_Path_t* uri, LWM2M_Resource& resource);
 
 	std::string getPartialResourceString(URI_Path_t* uri, LWM2M_Resource& resource, uint8_t depth = 0);
+
+	LWM2M_Resource parseJson_Resource(URI_Path_t* uri, std::string json_string);
+	
+
+
 	/*
 	LWM2M_Object& parseJSON(std::string jsonString);
 	*/
