@@ -22,7 +22,7 @@ class LWM2M_Client
 		URI_Path_t uri;
 		uint8_t observe_depth = 0;
 		uint16_t observe_mid = 0;
-		uint16_t notify_min = 60;
+		uint16_t notify_min = 1;
 		uint16_t notify_max = 3600;
 		uint16_t observed_val = 0;
 		uint16_t last_notify_sent = 0;
@@ -58,6 +58,8 @@ private:
 	
 	const char* endpoint_name;
 	char reg_id[12];
+
+	uint16_t last_mid_responded_to = 0;
 
 
 

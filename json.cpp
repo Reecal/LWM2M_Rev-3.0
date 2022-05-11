@@ -190,7 +190,7 @@ std::string json::createJSON_Resource(URI_Path_t* uri, LWM2M_Resource& resource)
 
 	if (uri->path_depth == REQUEST_RESOURCE) output += "]}";
 
-	LOG_INFO("Assembled json: " +  output);
+	//LOG_INFO("Assembled json: " +  output);
 	return output;
 }
 
@@ -245,7 +245,7 @@ std::string json::createJSON_MVResource(URI_Path_t* uri, LWM2M_Resource& resourc
 
 	if (uri->path_depth == REQUEST_MV_RESOURCE) output += "]}";
 
-	LOG_INFO("Assembled json: " + output);
+	//LOG_INFO("Assembled json: " + output);
 
 	//LOG_INFO(getPartialResourceString(uri, resource));
 	return output;

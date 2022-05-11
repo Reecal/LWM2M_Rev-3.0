@@ -529,7 +529,7 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 
 
 	bool uri_good = check_URI(&uri);
-	if (uri_good)
+	if (uri_good && c->header.messageID != last_mid_responded_to)
 	{
 		LOG_INFO("Request for " + CoAP_get_option_string(c, COAP_OPTIONS_URI_PATH));
 
@@ -722,7 +722,7 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 		return;
 	}
 
-	json::parseJson_Resource(uri, c->payload);
+	//json::parseJson_Resource(uri, c->payload);
 
 	if (uri->path_depth >= REQUEST_RESOURCE)
 	{
@@ -796,6 +796,7 @@ void LWM2M_Client::respond(CoAP_message_t* c, uint8_t return_code, std::string p
 	if (payload_format != 1) CoAP_add_option(&response, COAP_OPTIONS_CONTENT_FORMAT, payload_format);
 	CoAP_set_payload(&response, payload);
 	CoAP_assemble_message(&response);
+	last_mid_responded_to = c->header.messageID;
 	send((char*)(response.raw_data.masg.data()), response.raw_data.message_total);
 }
 
@@ -907,6 +908,12 @@ void LWM2M_Client::updateResource(uint16_t object_id, uint8_t instance_id, uint1
 
 uint8_t LWM2M_Client::add_observe_entity(CoAP_message_t* c, URI_Path_t* uri)
 {
+	for(uint8_t n = 0; n < MAX_OBSERVED_ENTITIES; n++)
+	{
+		if (observed_entities[n].uri.obj_id == uri->obj_id && observed_entities[n].uri.instance_id == uri->instance_id && observed_entities[n].uri.resource_id == uri->resource_id)
+			return 0;
+	}
+
 	LOG_INFO("Setting observe for: /" + std::to_string(uri->obj_id) + "/" + std::to_string(uri->instance_id) + "/" + std::to_string(uri->resource_id));
 	Observed_Entity_t obs;
 	obs.observe_depth = uri->path_depth;
@@ -941,7 +948,23 @@ void LWM2M_Client::observe_routine()
 		if (observed_entities[i].currently_observed == true)
 		{
 			bool is_over_max = observed_entities[i].last_notify_sent >= observed_entities[i].notify_max;
-			bool value_changed = getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getValueChanged();
+			bool value_changed = false;
+			if (observed_entities[i].uri.path_depth < REQUEST_RESOURCE)
+			{
+				for(uint8_t n = 0; n < getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).next_resource_ptr; n++)
+				{
+					if (getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).resources[n].getValueChanged())
+					{
+						value_changed = true;
+						break;
+					}
+
+				}
+			}
+			else
+			{
+				value_changed = getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getValueChanged();
+			}
 			bool is_over_min = observed_entities[i].last_notify_sent >= observed_entities[i].notify_min;
 			bool already_sent = observed_entities[i].last_notify_sent == 0;
 			bool notify_should_be_sent = is_over_max || (value_changed && is_over_min) && !already_sent;
@@ -950,7 +973,7 @@ void LWM2M_Client::observe_routine()
 				CoAP_Message_t notify_message;
 				CoAP_tx_setup(&notify_message, COAP_NON, 8, COAP_SUCCESS_CONTENT, observed_entities[i].observe_mid++, observed_entities[i].observe_token);
 				CoAP_add_option(&notify_message, COAP_OPTIONS_OBSERVE, observed_entities[i].observed_val++);
-				std::string payload = "";
+				std::string payload;
 				if (observed_entities[i].observe_depth <= REQUEST_INSTANCE || getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getMultiLevel() == true)
 				{
 					if (observed_entities[i].observe_depth == REQUEST_OBJECT) payload = json::createJSON_Object(getObject(observed_entities[i].uri.obj_id));
