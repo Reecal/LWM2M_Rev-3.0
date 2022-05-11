@@ -172,6 +172,9 @@ std::string json::createJSON_Resource(URI_Path_t* uri, LWM2M_Resource& resource)
 		if (uri->path_depth == REQUEST_RESOURCE)
 		{
 			output += "{";
+			//output += "{\"n\":\"";
+			//output += to_string(resource.getResource_id());
+			//output += "\",";
 			output += getPartialResourceString(uri, resource);
 			output += "}";
 		}
