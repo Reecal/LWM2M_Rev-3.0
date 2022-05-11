@@ -46,7 +46,7 @@ private:
 	uint8_t rxBuffer_tail = 0;
 	uint8_t txBuffer_head = 0;
 	uint8_t txBuffer_tail = 0;
-
+	uint16_t last_mid;
 	
 	//temp
 	uint16_t lifetime = 600;

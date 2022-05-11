@@ -60,6 +60,8 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 	object_ids[next_obj_ptr] = 3;
 	objects[next_obj_ptr] = obj3;
 	next_obj_ptr++;
+
+	last_mid = rand() % 65536;
 }
 
 
@@ -161,14 +163,6 @@ uint8_t LWM2M_Client::send(char* data, uint16_t data_len)
 
 uint8_t LWM2M_Client::send_registration()
 {
-	//temporary
-	//TODO Write proper registration function
-	/*char dataChar[] = "\x48\x02\x63\xc1\x08\x80\x6e\x17\x2e\xd0\x58\xe5\xb2rd\x11\x28\x33" \
-		"b=U\x09lwm2m=1.0\x06lt=100\x0d\x06"\
-		"ep=Radim_DP__LWM2M1\xff</>;ct=\"60 110 112 11542 11543\";rt=\"oma.lwm2m\",</1>;ver=1.1,</1/0>,</3>;ver=1.1,</3/0>,</6/0>,</3303>;ver=1.1,</3303/0>,</3441/0>";
-		*/
-
-	char payload[] = "</>;ct=\"60 11543\";rt=\"oma.lwm2m\",</1/0>,</3/0>,</6/0>,</3303>,</3303/0>,</3441/0>";
 	std::string pl = "</>;ct=";
 #if MULTI_VALUE_FORMAT == SINGLE_VALUE_FORMAT
 	pl += std::to_string(MULTI_VALUE_FORMAT);
@@ -186,7 +180,7 @@ uint8_t LWM2M_Client::send_registration()
 	}
 
 	CoAP_message_t coap_message;
-	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
+	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_CONTENT_FORMAT, APPLICATION_LINK_FORMAT);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "b=" + getObject(1).getResource(7).getValue());
@@ -225,7 +219,7 @@ uint8_t LWM2M_Client::send_registration()
 uint8_t LWM2M_Client::send_update()
 {
 	CoAP_message_t coap_message;
-	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST);
+	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, std::string(reg_id));
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + getObject(1).getResource(1).getValue());
@@ -344,14 +338,19 @@ void LWM2M_Client::loop()
 
 
 	case AWAIT_UPDATE_RESPONSE:
-
-		if (check_update_message(&last_message) == UPDATE_SUCCESS)
+	{
+		uint8_t update_message_return = check_update_message(&last_message);
+		if (update_message_return == UPDATE_SUCCESS)
 		{
 #if LOG_OUTPUT == 1 && LOG_VERBOSITY >=1
 			LOG_INFO("Update successful...");
 #endif
 			client_status = REGISTERED_IDLE;
 			lastUpdate = sys_time;
+		}
+		else if (update_message_return == UPDATE_FAILED)
+		{
+			client_status = NOT_REGISTERED;
 		}
 
 		else
@@ -360,7 +359,7 @@ void LWM2M_Client::loop()
 		}
 		break;
 
-
+	}
 
 
 	case REGISTERED_IDLE: case REGISTERED_TX_DATA_READY: case REGISTERED_AWAIT_RESPONSE: default:
@@ -406,7 +405,11 @@ uint8_t LWM2M_Client::check_update_message(CoAP_message_t* c)
 	{
 		return UPDATE_SUCCESS;
 	}
-	return UPDATE_FAILED;
+	if (c->header.type == COAP_ACK && c->header.returnCode == COAP_C_ERR_NOT_FOUND)
+	{
+		return UPDATE_FAILED;
+	}
+	return NOT_UPDATE_MESSAGE;
 
 }
 
@@ -807,18 +810,12 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 
 	if (uri->path_depth == REQUEST_RESOURCE)
 	{
-		
-
-
 		if (resource.getMultiLevel())
 		{
-			//send multivalue json
-			//std::string payload = "{\"bn\":\"/3441/0/1110/\",\"e\":[{\"n\":\"0\",\"sv\":\"initial value\"}]}";
-
 #if MULTI_VALUE_FORMAT == FORMAT_JSON
-			std::string payload = json::createJSON_MVResource(uri, resource);
+			std::string payload = json::createJSON_Resource(uri, resource);
 #else
-			std::string payload = json::createJSON_MVResource(uri, resource);
+			std::string payload = json::createJSON_Resource(uri, resource);
 #endif
 
 			respond(c, COAP_SUCCESS_CONTENT, payload, MULTI_VALUE_FORMAT);

@@ -22,14 +22,6 @@
 
 std::string json::createJSON_Object(LWM2M_Object& object)
 {
-	
-	/*std::sort(object.instances[0].resources.begin(), object.instances[0].resources.end(), [](LWM2M_Object::LWM2M_Instance::LWM2M_Resource r1, LWM2M_Object::LWM2M_Instance::LWM2M_Resource r2) {
-
-		if (r1.resource_id < r2.resource_id) return true;
-		else return false;
-		
-		});
-	*/
 	std::string output = "";
 	output += "{\"bn\":\"/";
 	output += to_string(object.getObject_id());
@@ -118,13 +110,6 @@ std::string json::createJSON_Object(LWM2M_Object& object)
 
 std::string json::createJSON_Instance(LWM2M_Object& object)
 {
-	/*std::sort(instance.resources.begin(), instance.resources.end(), [](LWM2M_Object::LWM2M_Instance::LWM2M_Resource r1, LWM2M_Object::LWM2M_Instance::LWM2M_Resource r2) {
-
-		if (r1.resource_id < r2.resource_id) return true;
-		else return false;
-
-		});
-	*/
 	std::string output = "";
 	output += "{\"bn\":\"/";
 	output += to_string(object.getObject_id());
@@ -143,50 +128,9 @@ std::string json::createJSON_Instance(LWM2M_Object& object)
 
 	for (auto& resource : object.resources)
 	{
-		std::string value_modifier;
-		std::string resource_value;
-		if (resource.getPermissions() == WRITE_ONLY || resource.getPermissions() == EXECUTABLE) continue;
-		if (resource.getType() == TYPE_STRING)
-		{
-			value_modifier = "sv";
-			resource_value = resource.getValue();
-		}
-		else if (resource.getType() == TYPE_INT)
-		{
-			value_modifier = "v";
-			resource_value = resource.getValue();
-		}
-		else if (resource.getType() == TYPE_BOOLEAN)
-		{
-			value_modifier = "bv";
-			if (resource.getValue() == "1")
-			{
-				resource_value = "true";
-			}
-			else
-			{
-				resource_value = "false";
-			}
-		}
-		else if (resource.getType() == TYPE_FLOAT)
-		{
-			value_modifier = "v";
-			resource_value = resource.getValue();
-		}
-		else continue;
-
-		output += "{\"n\":\"";
-		output += to_string(resource.getResource_id());
-		output += "\",\"";
-		output += value_modifier;
-		if (resource.getType() == TYPE_STRING)
-		{
-			output += "\":\"" + resource_value + "\"}";
-		}
-		else
-		{
-			output += "\":" + resource_value + "}";
-		}
+		URI_Path_t up = { object.obj_id, object.getInstance_id(), 0 , 0, 2 };
+		output += createJSON_Resource(&up, resource);
+		//output += "}";
 
 
 
@@ -210,56 +154,31 @@ std::string json::createJSON_Resource(URI_Path_t* uri, LWM2M_Resource& resource)
 {
 	if (resource.getPermissions() == WRITE_ONLY || resource.getPermissions() == EXECUTABLE) return "";
 	std::string output = "";
-	output += "{\"bn\":\"/";
-	output += std::to_string(uri->obj_id);
-	output += "/";
-	output += std::to_string(uri->instance_id);
-	output += "/";
-	output += std::to_string(resource.getResource_id());
-	output += "\",\"e\":[{";
+	if (uri->path_depth == REQUEST_RESOURCE)
+	{
+		output += "{\"bn\":\"/";
+		output += std::to_string(uri->obj_id);
+		output += "/";
+		output += std::to_string(uri->instance_id);
+		output += "/";
+		output += std::to_string(resource.getResource_id());
+		output += "/\",\"e\":[";
+	}
+	if (resource.getMultiLevel())
+	{
+		output += createJSON_MVResource(uri, resource);
+	}
+	else
+	{
+		output += "{\"n\":\"";
+		output += to_string(resource.getResource_id());
+		output += "\",";
+		output += getPartialResourceString(uri, resource);
+		output += "}";
+	}
 	
-		std::string value_modifier;
-		std::string resource_value;
-		if (resource.getType() == TYPE_STRING)
-		{
-			value_modifier = "sv";
-			resource_value = resource.getValue();
-		}
-		else if (resource.getType() == TYPE_INT)
-		{
-			value_modifier = "v";
-			resource_value = resource.getValue();
-		}
-		else if (resource.getType() == TYPE_BOOLEAN)
-		{
-			value_modifier = "bv";
-			if (resource.getValue() == "1")
-			{
-				resource_value = "true";
-			}
-			else
-			{
-				resource_value = "false";
-			}
-		}
-		else if (resource.getType() == TYPE_FLOAT)
-		{
-			value_modifier = "v";
-			resource_value = resource.getValue();
-		}
 
-		output += "\"";
-		output += value_modifier;
-		if (resource.getType() == TYPE_STRING)
-		{
-			output += "\":\"" + resource_value + "\"}";
-		}
-		else
-		{
-			output += "\":" + resource_value + "}";
-		}
-
-	output += "]}";
+	if (uri->path_depth == REQUEST_RESOURCE) output += "]}";
 
 	LOG_INFO("Assembled json: " +  output);
 	return output;
@@ -270,61 +189,37 @@ std::string json::createJSON_MVResource(URI_Path_t* uri, LWM2M_Resource& resourc
 {
 	if (resource.getPermissions() == WRITE_ONLY || resource.getPermissions() == EXECUTABLE) return "";
 	std::string output = "";
-	output += "{\"bn\":\"/";
-	output += std::to_string(uri->obj_id);
-	output += "/";
-	output += std::to_string(uri->instance_id);
-	output += "/";
-	output += std::to_string(resource.getResource_id());
-	
-	output += "/\",\"e\":[";
+	if (uri->path_depth == REQUEST_MV_RESOURCE)
+	{
+		output += "{\"bn\":\"/";
+		output += std::to_string(uri->obj_id);
+		output += "/";
+		output += std::to_string(uri->instance_id);
+		output += "/";
+		output += std::to_string(resource.getResource_id());
+		output += "/\",\"e\":[";
+	}
 
+	
 	for (uint8_t index = 0; index < resource.next_value_ptr; index++)
 	{
 		std::string value_modifier;
 		std::string resource_value;
 
-		if (resource.getType() == TYPE_STRING)
-		{
-			value_modifier = "sv";
-			resource_value = resource.getValue(index);
-		}
-		else if (resource.getType() == TYPE_INT)
-		{
-			value_modifier = "v";
-			resource_value = resource.getValue(index);
-		}
-		else if (resource.getType() == TYPE_BOOLEAN)
-		{
-			value_modifier = "bv";
-			if (resource.getValue(index) == "1")
-			{
-				resource_value = "true";
-			}
-			else
-			{
-				resource_value = "false";
-			}
-		}
-		else if (resource.getType() == TYPE_FLOAT)
-		{
-			value_modifier = "v";
-			resource_value = resource.getValue(index);
-		}
-
 		output += "{\"n\":\"";
-		output += to_string(index);
-		output += "\",\"";
-		//output += "\"";
-		output += value_modifier;
-		if (resource.getType() == TYPE_STRING)
+		if(uri->path_depth == REQUEST_INSTANCE)
 		{
-			output += "\":\"" + resource_value + "\"}";
+			output += to_string(resource.getResource_id()) + "/" +  to_string(index);
 		}
 		else
 		{
-			output += "\":" + resource_value + "}";
+			output += to_string(index);
 		}
+
+		
+		output += "\",";
+		output += getPartialResourceString(uri, resource, index);
+		output += "}";
 
 		if (index != resource.next_value_ptr-1)
 		{
@@ -339,11 +234,59 @@ std::string json::createJSON_MVResource(URI_Path_t* uri, LWM2M_Resource& resourc
 	
 	
 
-	output += "]}";
+	if (uri->path_depth == REQUEST_MV_RESOURCE) output += "]}";
 
 	LOG_INFO("Assembled json: " + output);
+
+	//LOG_INFO(getPartialResourceString(uri, resource));
 	return output;
 }
+
+std::string json::getPartialResourceString(URI_Path_t* uri, LWM2M_Resource& resource, uint8_t depth)
+{
+	std::string output = "\"";
+	std::string value_modifier;
+	std::string resource_value;
+	if (resource.getType() == TYPE_STRING)
+	{
+		value_modifier = "sv";
+		resource_value = resource.getValue(depth);
+	}
+	else if (resource.getType() == TYPE_INT)
+	{
+		value_modifier = "v";
+		resource_value = resource.getValue(depth);
+	}
+	else if (resource.getType() == TYPE_BOOLEAN)
+	{
+		value_modifier = "bv";
+		if (resource.getValue(depth) == "1")
+		{
+			resource_value = "true";
+		}
+		else
+		{
+			resource_value = "false";
+		}
+	}
+	else if (resource.getType() == TYPE_FLOAT)
+	{
+		value_modifier = "v";
+		resource_value = resource.getValue(depth);
+	}
+
+	output += value_modifier;
+	if (resource.getType() == TYPE_STRING)
+	{
+		output += "\":\"" + resource_value + "\"";
+	}
+	else
+	{
+		output += "\":" + resource_value;
+	}
+	return output;
+}
+
 
 /*LWM2M_Object& json::parseJSON(std::string jsonString)
 {

@@ -155,8 +155,8 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
                                         std::cout << "Resource /" << object_id << "/" << instance_id << "/" << resource_id << std::endl;
                                         std::cout << "\tType: " << client.getObject(object_id, instance_id).getResource(resource_id).getType() << std::endl;
                                         std::cout << "\tMultivalue: " << client.getObject(object_id, instance_id).getResource(resource_id).getMultiLevel() << std::endl;
-                                        std::cout << "\Permission: " << client.getObject(object_id, instance_id).getResource(resource_id).getPermissions() << std::endl;
-                                        std::cout << "\Value: " << client.getObject(object_id, instance_id).getResource(resource_id).getValue(0) << std::endl;
+                                        std::cout << "\tPermission: " << client.getObject(object_id, instance_id).getResource(resource_id).getPermissions() << std::endl;
+                                        std::cout << "\tValue: " << client.getObject(object_id, instance_id).getResource(resource_id).getValue(0) << std::endl;
                                         
                                     	//client.printSingleResource(object_id, instance_id, resource_id);
 
@@ -208,7 +208,7 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
                                 }
 
                                 int object_id = stoi(token);
-                                std::cout << "Object ID: " << object_id << std::endl;
+                                //std::cout << "Object ID: " << object_id << std::endl;
 
                                 if (ss.good())
                                 {
@@ -222,7 +222,7 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
 
 
                                     int instance_id = stoi(token);
-                                    std::cout << "Instance ID: " << instance_id << std::endl;
+                                    //std::cout << "Instance ID: " << instance_id << std::endl;
 
 
                                     if (ss.good())
@@ -236,7 +236,7 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
                                         }
 
                                         int resource_id = stoi(token);
-                                        std::cout << "Resource ID: " << resource_id << std::endl;
+                                        //std::cout << "Resource ID: " << resource_id << std::endl;
 
                                         if (ss.good())
                                         {
