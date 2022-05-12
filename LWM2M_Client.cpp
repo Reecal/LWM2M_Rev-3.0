@@ -994,7 +994,7 @@ void LWM2M_Client::observe_routine()
 #endif
 				}
 
-				CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, SINGLE_VALUE_FORMAT);
+				//CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, SINGLE_VALUE_FORMAT);
 				CoAP_set_payload(&notify_message, payload);
 				CoAP_assemble_message(&notify_message);
 				send((char*)(notify_message.raw_data.masg.data()), notify_message.raw_data.message_total);
