@@ -293,6 +293,7 @@ std::string json::getPartialResourceString(URI_Path_t* uri, LWM2M_Resource& reso
 	{
 		output += "\":" + resource_value;
 	}
+	resource.clearValueChanged();
 	return output;
 }
 

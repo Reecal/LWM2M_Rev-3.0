@@ -856,8 +856,10 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 			{
 #if SINGLE_VALUE_FORMAT == FORMAT_PLAIN_TEXT
 				payload = resource.getValue(uri->multi_level_id);
+				//resource.clearValueChanged();
 #else
 				payload = json::createJSON_Resource(uri, resource);
+				resource.clearValueChanged();
 #endif
 		}
 			else
@@ -993,7 +995,7 @@ void LWM2M_Client::observe_routine()
 				{
 #if SINGLE_VALUE_FORMAT == FORMAT_PLAIN_TEXT
 					payload = getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getValue();
-					getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).clearValueChanged();
+					if (!(observed_entities[i].uri.obj_id == 1 && observed_entities[i].uri.resource_id == 1)) getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).clearValueChanged();
 					CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, SINGLE_VALUE_FORMAT);
 #else
 					payload = json::createJSON_Resource(&uri, getObject(observed_entities[i].object_id, observed_entities[i].instance_id).getResource(observed_entities[i].resource_id));
