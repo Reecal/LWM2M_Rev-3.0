@@ -122,6 +122,11 @@ public:
 	{
 		return execute_cb();
 	}
+
+	void clearValueChanged()
+	{
+		value_changed = false;
+	}
 	
 	
 };

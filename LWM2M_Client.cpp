@@ -222,7 +222,11 @@ uint8_t LWM2M_Client::send_update()
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, std::string(reg_id));
-	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + getObject(1).getResource(1).getValue());
+	if (getObject(1).getResource(1).getValueChanged() == true)
+	{
+		CoAP_add_option(&coap_message, COAP_OPTIONS_URI_QUERY, "lt=" + getObject(1).getResource(1).getValue());
+		getObject(1).getResource(1).clearValueChanged();
+	}
 	CoAP_assemble_message(&coap_message);
 
 #if defined(AUTO_SEND)
@@ -255,7 +259,7 @@ uint8_t LWM2M_Client::update_routine()
 	{
 		//Try sending update again
 		//std::cout << "RETRY: " << (lastUpdate + lifetime) << " : " << (lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT << std::endl;
-		if (sys_time >= (lastUpdate + stoi(getObject(1).getResource(1).getValue())))
+		if (sys_time >= (lastUpdate + stoi(getObject(1).getResource(1).getValue())) && getObject(1).getResource(1).getValueChanged() != true)
 		{
 			client_status = NOT_REGISTERED;
 
@@ -899,6 +903,10 @@ void LWM2M_Client::updateResource(uint16_t object_id, uint8_t instance_id, uint1
 		if (getObject(object_id, instance_id).resource_exists(resource_id))
 		{
 			getObject(object_id, instance_id).getResource(resource_id).update_resource(value, depth);
+
+			//Special cases.
+			//Lifetime
+			if (object_id == 1 && resource_id == 1) send_update();
 		}
 	}
 }
@@ -985,6 +993,7 @@ void LWM2M_Client::observe_routine()
 				{
 #if SINGLE_VALUE_FORMAT == FORMAT_PLAIN_TEXT
 					payload = getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getValue();
+					getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).clearValueChanged();
 					CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, SINGLE_VALUE_FORMAT);
 #else
 					payload = json::createJSON_Resource(&uri, getObject(observed_entities[i].object_id, observed_entities[i].instance_id).getResource(observed_entities[i].resource_id));

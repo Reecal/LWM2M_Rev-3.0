@@ -38,7 +38,7 @@ LWM2M_Resource::LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permi
 
 std::string LWM2M_Resource::getValue(int depth)
 {
-	value_changed = false;
+	//value_changed = false;
 	return string_val[depth];
 }
 
