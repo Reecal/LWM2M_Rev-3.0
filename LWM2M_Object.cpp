@@ -51,6 +51,7 @@ LWM2M_Resource& LWM2M_Object::getResource(uint16_t rsrc_id)
 		if (resource_ids[search_var] == rsrc_id)
 			return resources[search_var];
 	}
+	return resources[0];
 }
 
 bool LWM2M_Object::resource_exists(uint16_t rsrc_id)

@@ -99,10 +99,10 @@ int main()
     
 
     //std::string ipAddr = "192.168.10.142";
-	std::string ipAddr = "192.168.204.128";
-    int port = 5683;
-    //std::string ipAddr = "62.245.65.221";
-    //int port = 9431;
+	//std::string ipAddr = "192.168.204.128";
+    //int port = 5683;
+    std::string ipAddr = "62.245.65.221";
+    int port = 9431;
     const std::string epName = "C++_123";
 
     initializeSocket(ipAddr, port, 5, s);

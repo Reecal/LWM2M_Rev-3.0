@@ -495,6 +495,7 @@ LWM2M_Object& LWM2M_Client::getObject(uint16_t object_id, uint8_t instance_id)
 		if (object_ids[search_var] == object_id && objects[search_var].getInstance_id() == instance_id)
 			return objects[search_var];
 	}
+	return objects[0];;
 }
 
 void LWM2M_Client::registrationInterfaceHandle(CoAP_message_t* c)
@@ -669,7 +670,6 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 	if (uri->path_depth >= REQUEST_RESOURCE)
 	{
 
-
 		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
 		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == READ_ONLY)
 		{
@@ -726,12 +726,9 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 
 	if (uri->path_depth >= REQUEST_RESOURCE)
 	{
-
-
 		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
 		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == WRITE_ONLY)
 		{
-			
 			getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).update_resource(c->payload, uri->multi_level_id);
 
 			//Special cases:
