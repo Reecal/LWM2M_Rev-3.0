@@ -93,7 +93,9 @@ private:
 	bool check_message_format(CoAP_message_t* c, uint16_t option);
 	uint8_t add_observe_entity(CoAP_message_t* c, URI_Path_t* uri);
 	void observe_routine();
-
+	void lwm_discover(CoAP_message_t* c, URI_Path_t* uri);
+	void lwm_delete(CoAP_message_t* c, URI_Path_t* uri);
+		
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)());
 	uint8_t send_update();
@@ -111,6 +113,9 @@ public:
 	bool object_exists(uint16_t object_id);
 	bool object_exists(uint16_t object_id, uint16_t instance_id);
 	void updateResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, std::string value, uint8_t depth = 0);
+
+	void testMethod();
+
 
 	void register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len));
 

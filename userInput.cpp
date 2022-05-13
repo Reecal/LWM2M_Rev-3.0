@@ -326,6 +326,13 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
                 else if (token == "") {}
                 else if (token == "Hello" || token == "Hi" || token == "hello" || token == "hi" || token == "whatsup") std::cout << "Hello to you too bro!" << std::endl;
 
+
+                //-------------------------------------------------------------- TEST
+                else if (token == "test")
+                {
+					client.testMethod();
+                }
+
                 //-------------------------------------------------------------- INVALID
                 else
                 {

@@ -541,7 +541,17 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 		switch(c->header.returnCode)
 		{
 		case COAP_METHOD_GET:
-			lwm_read(c, &uri);
+		{
+			std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
+			if (s[0] == APPLICATION_LINK_FORMAT)
+			{
+				lwm_discover(c, &uri);
+			}
+			else
+			{
+				lwm_read(c, &uri);
+			}
+		}
 			break;
 		case COAP_METHOD_POST:
 			lwm_execute(c, &uri);
@@ -549,7 +559,10 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 		case COAP_METHOD_PUT:
 			lwm_write(c, &uri);
 			break;
-		default: //DELETE or ACK
+		case COAP_METHOD_DELETE:
+			lwm_delete(c, &uri);
+			break;
+		default: //ACK
 			break;
 		}
 	}
@@ -663,6 +676,7 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 	
 	LOG_INFO("LWM_READ");
 
+	
 	bool format_good = check_message_format(c, COAP_OPTIONS_ACCEPT);
 	if (!format_good)
 	{
@@ -1010,4 +1024,40 @@ void LWM2M_Client::observe_routine()
 			}
 		}
 	}
+
+	
+}
+
+void LWM2M_Client::lwm_discover(CoAP_message_t* c, URI_Path_t* uri)
+{
+	
+}
+
+void LWM2M_Client::lwm_delete(CoAP_message_t* c, URI_Path_t* uri)
+{
+
+}
+
+
+
+
+void LWM2M_Client::testMethod()
+{
+	CoAP_message_t coap_message;
+	/*CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_GET, last_mid++);
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_HOST, "NwwETjHLuU");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "3");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "0");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "1");
+	CoAP_assemble_message(&coap_message);
+	send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);*/
+
+	URI_Path_t uri = { 3,0,0,0,3 };
+	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
+	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "dp");
+	CoAP_add_option(&coap_message, COAP_OPTIONS_CONTENT_FORMAT, MULTI_VALUE_FORMAT);
+	std::string payload = json::createJSON_Resource(&uri,getObject(1).getResource(0));
+	CoAP_set_payload(&coap_message, payload);
+	CoAP_assemble_message(&coap_message);
+	send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);
 }
