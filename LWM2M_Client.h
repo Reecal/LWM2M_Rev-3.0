@@ -95,6 +95,8 @@ private:
 	void observe_routine();
 	void lwm_discover(CoAP_message_t* c, URI_Path_t* uri);
 	void lwm_delete(CoAP_message_t* c, URI_Path_t* uri);
+	void lwm_create(CoAP_message_t* c, URI_Path_t* uri);
+
 		
 public:
 	LWM2M_Client(const char* ep_name, uint8_t(*reb)());
@@ -104,7 +106,7 @@ public:
 	uint8_t getTxData(char*& outputBuffer);
 	void advanceTime(uint16_t amount_in_seconds);
 	LWM2M_Object& getObject(uint16_t object_id, uint8_t instance_id = 0);
-	void createObject(uint16_t object_id, uint8_t instance_id);
+	void createObject(uint16_t object_id, uint8_t instance_id = 0);
 	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value);
 	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, bool default_value);
 	void addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, int default_value);

@@ -417,7 +417,8 @@ string CoAP_get_option_string(CoAP_message_t* coap_struct, uint8_t option_to_get
 			}
 			if (option_to_get == COAP_OPTIONS_OBSERVE)
 			{
-				output += '0';
+				if (option.option_length == 0) output += '0';
+				
 			}
 			else if(option_to_get == COAP_OPTIONS_ACCEPT)
 			{

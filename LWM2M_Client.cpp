@@ -740,14 +740,18 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 		return;
 	}
 
-	//json::parseJson_Resource(uri, c->payload);
+	//json::parseJsonAndUpdate_Resource(uri, c->payload, getObject(1).getResource(1));
 
 	if (uri->path_depth >= REQUEST_RESOURCE)
 	{
 		LWM2M_Resource& resource = getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id);
 		if (resource.getPermissions() == READ_WRITE || resource.getPermissions() == WRITE_ONLY)
 		{
+#if SINGLE_VALUE_FORMAT == FORMAT_PLAIN_TEXT
 			getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).update_resource(c->payload, uri->multi_level_id);
+#else
+			json::parseJsonAndUpdate_Resource(uri, c->payload, getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id));
+#endif
 
 			//Special cases:
 			if (uri->obj_id == 1 && uri->resource_id == 1)
@@ -895,6 +899,10 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 	}
 }
 
+
+
+
+
 bool LWM2M_Client::check_message_format(CoAP_message_t* c, uint16_t option)
 {
 	std::string s = CoAP_get_option_string(c, option);
@@ -1012,11 +1020,12 @@ void LWM2M_Client::observe_routine()
 					if (!(observed_entities[i].uri.obj_id == 1 && observed_entities[i].uri.resource_id == 1)) getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).clearValueChanged();
 					CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, SINGLE_VALUE_FORMAT);
 #else
-					payload = json::createJSON_Resource(&uri, getObject(observed_entities[i].object_id, observed_entities[i].instance_id).getResource(observed_entities[i].resource_id));
+					payload = json::createJSON_Resource(&(observed_entities[i].uri), getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id));
+					if (!(observed_entities[i].uri.obj_id == 1 && observed_entities[i].uri.resource_id == 1)) getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).clearValueChanged();
+					CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, MULTI_VALUE_FORMAT);
 #endif
 				}
 
-				//CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, SINGLE_VALUE_FORMAT);
 				CoAP_set_payload(&notify_message, payload);
 				CoAP_assemble_message(&notify_message);
 				send((char*)(notify_message.raw_data.masg.data()), notify_message.raw_data.message_total);
@@ -1030,12 +1039,40 @@ void LWM2M_Client::observe_routine()
 
 void LWM2M_Client::lwm_discover(CoAP_message_t* c, URI_Path_t* uri)
 {
-	
+	//if (uri->path_depth == REQUEST)
+}
+
+void LWM2M_Client::lwm_create(CoAP_message_t* c, URI_Path_t* uri)
+{
+	if (uri->path_depth > REQUEST_OBJECT) //Creation os entities other than objects is not allowed (OMA TS. V1.0.2 20180209 page 80)
+	{
+		respond(c, COAP_C_ERR_NOT_ALLOWED);
+	}
+	createObject(uri->obj_id);
+
 }
 
 void LWM2M_Client::lwm_delete(CoAP_message_t* c, URI_Path_t* uri)
 {
-
+	//At this point URI is good
+	if (uri->path_depth > REQUEST_INSTANCE || (uri->obj_id == 3 && uri->instance_id == 0)) //Deletes for single resources and Device object 3 is not allowed (OMA TS. V1.0.2 20180209 page 38)
+	{
+		respond(c, COAP_C_ERR_NOT_ALLOWED);
+	}
+	for(uint8_t i = 0; i < next_obj_ptr; i++)
+	{
+		if (objects[i].getObject_id() == uri->obj_id && objects[i].getInstance_id() == uri->instance_id)
+		{
+			for(uint8_t m = i; m < next_obj_ptr-1; m++)
+			{
+				objects[m] = objects[m + 1];
+				
+			}
+			objects[--next_obj_ptr] = LWM2M_Object();
+			respond(c, COAP_SUCCESS_DELETED);
+			break;
+		}
+	}
 }
 
 

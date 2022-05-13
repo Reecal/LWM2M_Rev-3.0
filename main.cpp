@@ -88,6 +88,18 @@ int main()
     client.createObject(3328, 0);
     client.addResource(3328, 0, 5601, TYPE_FLOAT, READ_ONLY, false, (float)3.1452);
 
+    client.createObject(4, 1);
+#if defined(USE_BG77)
+    client.addResource(4, 1, 0, TYPE_INT, READ_ONLY, false, (int)7);
+#else
+    client.addResource(4, 1, 0, TYPE_INT, READ_ONLY, false, (int)41);
+#endif
+    client.addResource(4, 1, 1, TYPE_INT, READ_ONLY, true, (int)20);
+    client.addResource(4, 1, 2, TYPE_INT, READ_ONLY, false, (int)-70);
+    client.addResource(4, 1, 4, TYPE_STRING, READ_ONLY, false, (char*)"192.168.10.128");
+    client.addResource(4, 1, 5, TYPE_STRING, READ_ONLY, false, (char*)"192.168.10.1");
+    client.addResource(4, 1, 7, TYPE_STRING, READ_ONLY, false, (char*)"lpwa.vodafone.iot");
+
     
 
 
