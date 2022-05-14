@@ -299,28 +299,20 @@ std::string json::getPartialResourceString(URI_Path_t* uri, LWM2M_Resource& reso
 
 uint8_t json::parseJsonAndUpdate_Resource(URI_Path_t* uri, std::string json_string, LWM2M_Resource& resource)
 {
-	//{"bn":"/1/","e":[{"n":"1/1","v":34},{"n":"1/6","bv":true},{"n":"1/7","sv":"U"}]}
-		/*if (uri->path_depth == REQUEST_RESOURCE)
-		{
-			//tvar {"n":"cislo","bv":false}
-		}*/
-
 	json_string.erase(0, json_string.find("[{\"")); // get rid of the beginning. We all know of it from URI
 	int var_start = json_string.find("{")+1;				//Find the beginning of a resource
 	int var_end = json_string.find("}");					//Find the end of a resource
 	std::string value_string = json_string.substr(var_start, var_end-var_start);
-	LOG_INFO(json_string);
-	LOG_INFO(value_string);
 
 	int value_end = value_string.find("\"", 1);
 	std::string variable_type = value_string.substr(1, value_end-1);
 
-	LOG_INFO(variable_type);
-
 	if (variable_type == "bv")
 	{
+		if (resource.getType() != TYPE_BOOLEAN) return JSON_INVALID_VALUE_TYPE;
 		int value_start = value_string.find(":") + 1;
 		std::string value = value_string.erase(0, value_start);
+		
 		if (value == "false")
 		{
 			value = "0";
@@ -333,22 +325,22 @@ uint8_t json::parseJsonAndUpdate_Resource(URI_Path_t* uri, std::string json_stri
 		{
 			return JSON_INVALID_VALUE_FORMAT;
 		}
-		LOG_INFO(value);
 		resource.update_resource(value, uri->path_depth);
 	}
 	else if (variable_type == "sv")
 	{
+		if (resource.getType() != TYPE_STRING) return JSON_INVALID_VALUE_TYPE;
 		int value_start = value_string.find(":") + 2;
 		std::string value = value_string.erase(0, value_start);
 		value = value.substr(0, value.length() - 1);
-		LOG_INFO(value);
 		resource.update_resource(value, uri->path_depth);
 	}
 	else if (variable_type == "v")
 	{
+		if (resource.getType() != TYPE_INT || resource.getType() != TYPE_FLOAT) return JSON_INVALID_VALUE_TYPE;
 		int value_start = value_string.find(":") + 1;
 		std::string value = value_string.erase(0, value_start);
-		LOG_INFO(value);
+		if (!isInteger(value) || !isFloat(value)) return JSON_INVALID_VALUE_FORMAT;
 		resource.update_resource(value, uri->path_depth);
 	}
 	else
@@ -363,6 +355,7 @@ uint8_t json::parseJsonAndUpdate_Resource(URI_Path_t* uri, std::string json_stri
 
 LWM2M_Resource json::parseJson_Instance(URI_Path_t* uri, std::string json_string)
 {
+	//{"bn":"/1/","e":[{"n":"1/1","v":34},{"n":"1/6","bv":true},{"n":"1/7","sv":"U"}]}
 	return 0;
 }
 LWM2M_Resource json::parseJson_Object(URI_Path_t* uri, std::string json_string)
