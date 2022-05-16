@@ -430,6 +430,24 @@ void LWM2M_Client::save_registration_id(CoAP_message_t* c)
 uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 {
 	print_message_info(c);
+
+	if (c->header.type == COAP_RST)
+	{
+		for (uint8_t i = 0; i < MAX_OBSERVED_ENTITIES; i++)
+		{
+			if (observed_entities[i].observe_mid - 1 == c->header.messageID)
+			{
+				LOG_INFO("Stoping observe for /" + std::to_string(observed_entities[i].uri.obj_id) + "/" + std::to_string(observed_entities[i].uri.instance_id) + "/" + std::to_string(observed_entities[i].uri.resource_id));
+				observed_entities[i].currently_observed = false;
+				observed_entities[i].last_notify_sent = 0;
+				number_of_observed_entities--;
+			}
+			if (i == number_of_observed_entities) break;
+		}
+		return 0;
+	}
+
+
 	char uri_buffer[20];
 	CoAP_get_option_chars(c, COAP_OPTIONS_LOCATION_PATH, uri_buffer);
 
@@ -512,23 +530,6 @@ void LWM2M_Client::bootstrapInterfaceHandle(CoAP_message_t* c)
 }
 void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_message_t* c)
 {
-
-	if (c->header.type == COAP_RST)
-	{
-		for (uint8_t i = 0; i < MAX_OBSERVED_ENTITIES; i++)
-		{
-			if (observed_entities[i].observe_mid-1 == c->header.messageID)
-			{
-				LOG_INFO("Stoping observe for /" + std::to_string(observed_entities[i].uri.obj_id) + "/" + std::to_string(observed_entities[i].uri.instance_id) + "/" + std::to_string(observed_entities[i].uri.resource_id));
-				observed_entities[i].currently_observed = false;
-				observed_entities[i].last_notify_sent = 0;
-				number_of_observed_entities--;
-			}
-			if (i == number_of_observed_entities) break;
-		}
-		return;
-	}
-
 
 	URI_Path_t uri = CoAP_get_URI(c);
 
@@ -794,8 +795,12 @@ void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
 		else
 		{
 			//bad permission
-			respond(c, COAP_C_ERR_BAD_REQUEST, std::string("Invalid URI."));
+			respond(c, COAP_C_ERR_BAD_REQUEST, std::string("Not an executable resource."));
 		}
+	}
+	else
+	{
+		respond(c, COAP_C_ERR_NOT_ALLOWED, std::string("Not allowed."));
 	}
 }
 
