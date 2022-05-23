@@ -41,7 +41,7 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 {
 	LWM2M_Object obj1(1);
 	obj1.add_resource(0, TYPE_INT, READ_ONLY, false, (int) 25);
-	obj1.add_resource(1, TYPE_INT, READ_WRITE, false, (int)30);
+	obj1.add_resource(1, TYPE_INT, READ_WRITE, false, (int)600);
 	obj1.add_resource(6, TYPE_BOOLEAN, READ_WRITE, false, true);
 	obj1.add_resource(7, TYPE_STRING, READ_WRITE, false, (char*) "U");
 	obj1.add_executable_resource(8);
@@ -52,7 +52,8 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 
 
 	LWM2M_Object obj3(3);
-	obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"Diploma Thesis Radim Dvorak");
+	//obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"Diploma Thesis Radim Dvorak");
+	obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"UIDASCAVWHXXDXTGUNVSSTFGMDMXNQHICNKUPKTMSRKXRGGNUCINXPVMSIKHAURCIDYXPUMKMWKHERUBVDOWUMJNVWWVRRACUBCMWOXLLISRCPSYUJVPWFESCDQVUSXRTAFSQFFDNAWSQQRLAPCYWIRCLKXJDYBABGUSLAXCDUWTNOFOGJPDRIFGUGRBFSBICVDPYBTCYQXMHFDNPTTJEYRYFJAMFDXJCBYBDVFEOFQYKWMAQIMUKEVPQWFVCDHE");
 	obj3.add_resource(3, TYPE_STRING, READ_ONLY, false, (char*)"Rev 3.0");
 	obj3.add_executable_resource(4, reboot_cb);
 	obj3.add_resource(11, TYPE_INT, READ_ONLY, true, 0);
@@ -268,10 +269,11 @@ uint8_t LWM2M_Client::update_routine()
 			#endif
 		}
 
-		else if (((lastUpdate + stoi(getObject(1).getResource(1).getValue())) - sys_time) % UPDATE_RETRY_TIMEOUT == 0)
+		else if ((sys_time - last_update_sent) % UPDATE_RETRY_TIMEOUT == 0)
 		{
 			if (sys_time != last_update_sent)
 			{
+				LOG_INFO("Trigger update 1");
 				return send_update();
 			}
 			return 0;
@@ -282,6 +284,7 @@ uint8_t LWM2M_Client::update_routine()
 	{
 		if (sys_time >= (lastUpdate + stoi(getObject(1).getResource(1).getValue()) - UPDATE_HYSTERESIS))
 		{
+			LOG_INFO("Trigger update 2");
 			return send_update();
 		}
 	}
@@ -935,10 +938,28 @@ void LWM2M_Client::updateResource(uint16_t object_id, uint8_t instance_id, uint1
 
 			//Special cases.
 			//Lifetime
-			if (object_id == 1 && resource_id == 1) send_update();
+			if (object_id == 1 && resource_id == 1)
+			{
+				LOG_INFO("Trigger update 3");
+				send_update();
+			}
 		}
 	}
 }
+
+std::string LWM2M_Client::getResourceValue(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t depth)
+{
+	if (object_exists(object_id, instance_id))
+	{
+		if (getObject(object_id, instance_id).resource_exists(resource_id))
+		{
+			return getObject(object_id, instance_id).getResource(resource_id).getValue(depth);
+		}
+	}
+	return "";
+
+}
+
 
 uint8_t LWM2M_Client::add_observe_entity(CoAP_message_t* c, URI_Path_t* uri)
 {
@@ -1094,12 +1115,14 @@ void LWM2M_Client::testMethod()
 	CoAP_assemble_message(&coap_message);
 	send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);*/
 
-	URI_Path_t uri = { 3,0,0,0,3 };
+	/*URI_Path_t uri = {3,0,0,0,3};
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "dp");
 	CoAP_add_option(&coap_message, COAP_OPTIONS_CONTENT_FORMAT, MULTI_VALUE_FORMAT);
 	std::string payload = json::createJSON_Resource(&uri,getObject(1).getResource(0));
 	CoAP_set_payload(&coap_message, payload);
 	CoAP_assemble_message(&coap_message);
-	send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);
+	send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);*/
+
+	std::cout << getStatus() << std::endl;
 }

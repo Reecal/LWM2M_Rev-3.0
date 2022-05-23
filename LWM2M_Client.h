@@ -23,7 +23,7 @@ class LWM2M_Client
 		uint8_t observe_depth = 0;
 		uint16_t observe_mid = 0;
 		uint16_t notify_min = 1;
-		uint16_t notify_max = 3600;
+		uint16_t notify_max = 15;
 		uint16_t observed_val = 0;
 		uint16_t last_notify_sent = 0;
 		uint8_t observe_token[8] = { 0 };
@@ -115,6 +115,7 @@ public:
 	bool object_exists(uint16_t object_id);
 	bool object_exists(uint16_t object_id, uint16_t instance_id);
 	void updateResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, std::string value, uint8_t depth = 0);
+	std::string getResourceValue(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t depth = 0);
 
 	void testMethod();
 

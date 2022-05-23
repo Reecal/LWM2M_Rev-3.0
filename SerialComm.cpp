@@ -3,7 +3,7 @@
 
 SerialComm::SerialComm()
 {
-    LPCWSTR lpcwstr = L"\\\\.\\COM6";
+    LPCWSTR lpcwstr = L"\\\\.\\COM14";
     serialHandle = CreateFile(lpcwstr, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
     // Do some basic settings

@@ -58,7 +58,7 @@ int main()
 	LWM2M_Client client("RD_EP", rebootfunc);
     client.register_send_callback(send_fc);
 
-	client.createObject(3441, 0);
+	/*client.createObject(3441, 0);
     client.addResource(3441, 0, 110, TYPE_STRING, READ_WRITE, false, (char*)"initial value");
     client.addResource(3441, 0, 120, TYPE_INT, READ_WRITE, false, (int) 1024);
     client.addResource(3441, 0, 130, TYPE_FLOAT, READ_WRITE, false, (float)3.14159);
@@ -67,7 +67,7 @@ int main()
     client.addResource(3441, 0, 1120, TYPE_INT, READ_WRITE, true, (int)1024);
     client.addResource(3441, 0, 1130, TYPE_FLOAT, READ_WRITE, true, (float)3.14159);
     client.addResource(3441, 0, 1140, TYPE_BOOLEAN, READ_WRITE, true, true);
-    client.updateResource(3441, 0, 1110, "Hello", 1);
+    client.updateResource(3441, 0, 1110, "Hello", 1);*/
 
 
     client.createObject(4, 0);
@@ -85,10 +85,10 @@ int main()
     client.createObject(3342, 0);
     client.addResource(3342, 0, 5500, TYPE_BOOLEAN, READ_ONLY, false, true);
 
-    client.createObject(3328, 0);
-    client.addResource(3328, 0, 5601, TYPE_FLOAT, READ_ONLY, false, (float)3.1452);
+    /*client.createObject(3328, 0);
+    client.addResource(3328, 0, 5601, TYPE_FLOAT, READ_ONLY, false, (float)3.1452);*/
 
-    client.createObject(4, 1);
+    /*client.createObject(4, 1);
 #if defined(USE_BG77)
     client.addResource(4, 1, 0, TYPE_INT, READ_ONLY, false, (int)7);
 #else
@@ -98,7 +98,7 @@ int main()
     client.addResource(4, 1, 2, TYPE_INT, READ_ONLY, false, (int)-70);
     client.addResource(4, 1, 4, TYPE_STRING, READ_ONLY, false, (char*)"192.168.10.128");
     client.addResource(4, 1, 5, TYPE_STRING, READ_ONLY, false, (char*)"192.168.10.1");
-    client.addResource(4, 1, 7, TYPE_STRING, READ_ONLY, false, (char*)"lpwa.vodafone.iot");
+    client.addResource(4, 1, 7, TYPE_STRING, READ_ONLY, false, (char*)"lpwa.vodafone.iot");*/
 
     
 
@@ -164,6 +164,7 @@ int main()
             {
                 len = bg.pullData(outputBuffer);
                 if (len > 0) client.receive(outputBuffer, len);
+                Sleep(100);
             } while (len != 0);
         	
             

@@ -162,7 +162,9 @@ std::string json::createJSON_Resource(URI_Path_t* uri, LWM2M_Resource& resource)
 		output += std::to_string(uri->instance_id);
 		output += "/";
 		output += std::to_string(resource.getResource_id());
-		output += "/\",\"e\":[";
+		//output += "/\",\"e\":[";
+		if (resource.getMultiLevel()) output += "/";
+		output += "\",\"e\":[";
 	}
 	if (resource.getMultiLevel())
 	{
