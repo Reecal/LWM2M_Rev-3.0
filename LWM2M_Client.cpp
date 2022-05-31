@@ -1130,6 +1130,7 @@ void LWM2M_Client::observe_routine()
 
 				CoAP_set_payload(&notify_message, payload);
 				CoAP_assemble_message(&notify_message);
+				LOG_INFO("Sending Notify for entity: /" + std::to_string(observed_entities[i].uri.obj_id) + "/" + std::to_string(observed_entities[i].uri.instance_id) + "/" + std::to_string(observed_entities[i].uri.resource_id));
 				send((char*)(notify_message.raw_data.masg.data()), notify_message.raw_data.message_total);
 				observed_entities[i].last_notify_sent = 0;
 			}
