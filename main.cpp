@@ -50,15 +50,16 @@ void application_timer(LWM2M_Client& client, bool& applicationRun);
 
 SOCKET s;
 BG77 bg(false);
+LWM2M_Client client("RD_EP", rebootfunc);
 
 int main()
 {
     srand(time(NULL));
 
-	LWM2M_Client client("RD_EP", rebootfunc);
+	
     client.register_send_callback(send_fc);
 
-	/*client.createObject(3441, 0);
+	client.createObject(3441, 0);
     client.addResource(3441, 0, 110, TYPE_STRING, READ_WRITE, false, (char*)"initial value");
     client.addResource(3441, 0, 120, TYPE_INT, READ_WRITE, false, (int) 1024);
     client.addResource(3441, 0, 130, TYPE_FLOAT, READ_WRITE, false, (float)3.14159);
@@ -67,7 +68,7 @@ int main()
     client.addResource(3441, 0, 1120, TYPE_INT, READ_WRITE, true, (int)1024);
     client.addResource(3441, 0, 1130, TYPE_FLOAT, READ_WRITE, true, (float)3.14159);
     client.addResource(3441, 0, 1140, TYPE_BOOLEAN, READ_WRITE, true, true);
-    client.updateResource(3441, 0, 1110, "Hello", 1);*/
+    client.updateResource(3441, 0, 1110, "Hello", 1);
 
 
     client.createObject(4, 0);
@@ -215,6 +216,8 @@ void changeReference(const char*& ptr, const char* text)
 uint8_t rebootfunc()
 {
     LOG_WARNING("Reboot: ");
+    client.client_deregister();
+    Sleep(5000);
     return 0;
 }
 

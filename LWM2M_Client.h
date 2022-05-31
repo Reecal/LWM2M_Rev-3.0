@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
+#include <stdlib.h>
 #include "LWM2M_Defines.h"
 #include "CoAP.hpp"
 #include "LWM2M_Object.h"
@@ -60,12 +62,13 @@ private:
 	char reg_id[12];
 
 	uint16_t last_mid_responded_to = 0;
-
-
-
+#if defined(USE_VECTORS)
+	vector<LWM2M_Object> objects_vector;
+#else
 	uint8_t next_obj_ptr = 0;
 	uint16_t object_ids[MAX_OBJECTS * MAX_INSTANCES];
 	LWM2M_Object objects[MAX_OBJECTS*MAX_INSTANCES];
+#endif
 
 
 	uint8_t(*reboot_cb)();
@@ -76,6 +79,7 @@ private:
 	uint8_t send_registration();
 	
 	uint8_t update_routine();
+	uint8_t registration_routine();
 	uint8_t check_registration_message(CoAP_message_t* c);
 	uint8_t check_update_message(CoAP_message_t* c);
 	void save_registration_id(CoAP_message_t* c);

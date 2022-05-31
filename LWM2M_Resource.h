@@ -37,12 +37,14 @@ private:
 	uint8_t type;
 	uint8_t permissions;
 	//uint8_t next_value_ptr = 0;
+
+#if defined(USE_VECTOR)
+#else
 	Value_t values[MAX_RESOURCE_PARTS];
 	char string_value[MAX_RESOURCE_PARTS][MAX_STRING_LENGTH];
 	uint8_t(*execute_cb)();
 	std::string string_val[MAX_RESOURCE_PARTS];
-
-	
+#endif
 	bool value_changed = false;
 	
 

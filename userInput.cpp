@@ -337,6 +337,11 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
 					client.testMethod();
                 }
 
+                else if (token == "deregister" || token == "dereg" || token == "drg")
+                {
+					client.client_deregister();
+                }
+
                 //-------------------------------------------------------------- INVALID
                 else
                 {

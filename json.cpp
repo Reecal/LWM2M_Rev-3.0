@@ -1,5 +1,4 @@
 #include "json.h"
-
 #include "Logger_xdvora2g.h"
 
 
@@ -31,6 +30,16 @@ std::string json::createJSON_Object(LWM2M_Object& object)
 
 	int offset = 1;
 	//LWM2M_Resource& lastResource = object.instances[0].resources[object.instances[0].resources.size() - offset];
+#if defined(USE_VECTORS)
+	LWM2M_Resource& lastResource = object.resources_vector[object.resources_vector.size() - offset];
+	while (lastResource.getType() == TYPE_EXECUTABLE)
+	{
+		lastResource = object.resources_vector[object.resources_vector.size() - offset];
+		offset++;
+	}
+	int lastResourceID = lastResource.getResource_id();
+	for (auto& resource : object.resources_vector)
+#else
 	LWM2M_Resource& lastResource = object.resources[object.next_resource_ptr - offset];
 	while (lastResource.getType() == TYPE_EXECUTABLE)
 	{
@@ -40,6 +49,8 @@ std::string json::createJSON_Object(LWM2M_Object& object)
 	int lastResourceID = lastResource.getResource_id();
 
 	for (auto& resource : object.resources)
+#endif
+	
 	{
 		std::string value_modifier;
 		std::string resource_value;
@@ -117,6 +128,16 @@ std::string json::createJSON_Instance(LWM2M_Object& object)
 	output += "/\",\"e\":[";
 
 	int offset = 1;
+#if defined(USE_VECTORS)
+	LWM2M_Resource& lastResource = object.resources_vector[object.resources_vector.size() - offset];
+	while (lastResource.getType() == TYPE_EXECUTABLE)
+	{
+		lastResource = object.resources_vector[object.resources_vector.size() - offset];
+		offset++;
+	}
+	int lastResourceID = lastResource.getResource_id();
+	for (auto& resource : object.resources_vector)
+#else
 	LWM2M_Resource& lastResource = object.resources[object.next_resource_ptr - offset];
 	while (lastResource.getType() == TYPE_EXECUTABLE)
 	{
@@ -126,9 +147,10 @@ std::string json::createJSON_Instance(LWM2M_Object& object)
 	int lastResourceID = lastResource.getResource_id();
 
 	for (auto& resource : object.resources)
+#endif
 	{
 		if (resource.getType() == TYPE_EXECUTABLE) continue;
-		URI_Path_t up = { object.obj_id, object.getInstance_id(), 0 , 0, 2 };
+		URI_Path_t up = { object.getObject_id(), object.getInstance_id(), 0 , 0, 2 };
 		output += createJSON_Resource(&up, resource);
 		//output += "}";
 

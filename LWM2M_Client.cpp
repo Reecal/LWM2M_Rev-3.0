@@ -45,9 +45,13 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 	obj1.add_resource(6, TYPE_BOOLEAN, READ_WRITE, false, true);
 	obj1.add_resource(7, TYPE_STRING, READ_WRITE, false, (char*) "U");
 	obj1.add_executable_resource(8);
+#if defined(USE_VECTORS)
+	objects_vector.push_back(obj1);
+#else
 	object_ids[next_obj_ptr] = 1;
 	objects[next_obj_ptr] = obj1;
 	next_obj_ptr++;
+#endif
 
 
 
@@ -58,10 +62,15 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 	obj3.add_executable_resource(4, reboot_cb);
 	obj3.add_resource(11, TYPE_INT, READ_ONLY, true, 0);
 	obj3.add_resource(16, TYPE_STRING, READ_ONLY, false, (char*) "U");
+	
+#if defined(USE_VECTORS)
+	objects_vector.push_back(obj3);
+#else
 	object_ids[next_obj_ptr] = 3;
 	objects[next_obj_ptr] = obj3;
 	next_obj_ptr++;
-
+#endif
+	srand(68);
 	last_mid = rand() % 65536;
 }
 
@@ -172,6 +181,17 @@ uint8_t LWM2M_Client::send_registration()
 #endif
 	pl += ";rt=\"oma.lwm2m\",";
 
+#if defined(USE_VECTORS)
+	uint8_t ctr = 0;
+	for(LWM2M_Object& o : objects_vector)
+	{
+		ctr++;
+		pl += "</";
+		pl += to_string(o.getObject_id()) + "/" + std::to_string(o.getInstance_id());
+		pl += ">";
+		if (ctr != objects_vector.size()) pl += ",";
+	}
+#else
 	for(uint8_t i = 0; i < next_obj_ptr; i++)
 	{
 		pl += "</";
@@ -179,6 +199,7 @@ uint8_t LWM2M_Client::send_registration()
 		pl += ">";
 		if (i != next_obj_ptr - 1) pl += ",";
 	}
+#endif
 
 	CoAP_message_t coap_message;
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
@@ -204,6 +225,7 @@ uint8_t LWM2M_Client::send_registration()
 
 	client_status = AWAIT_REGISTRATION_RESPONSE;
 	//return send(dataChar, strlen(dataChar));
+	last_update_sent = sys_time;
 	return send((char*)(coap_message.raw_data.masg.data()), coap_message.raw_data.message_total);
 #else
 	client_status = REGISTRATION_SCHEDULED;
@@ -256,6 +278,7 @@ uint8_t LWM2M_Client::send_update()
 uint8_t LWM2M_Client::update_routine()
 {
 	if (client_status == NOT_REGISTERED || client_status == AWAIT_REGISTRATION_RESPONSE) return 1;
+	if (sys_time == last_update_sent) return 1;
 	if (client_status == AWAIT_UPDATE_RESPONSE)
 	{
 		//Try sending update again
@@ -294,6 +317,13 @@ uint8_t LWM2M_Client::update_routine()
 	return 0;
 }
 
+uint8_t LWM2M_Client::registration_routine()
+{
+	if (sys_time >= last_update_sent + UPDATE_HYSTERESIS) client_status = NOT_REGISTERED;
+	return 0;
+
+}
+
 void LWM2M_Client::loop()
 {
 	//Check if the client is registered or not
@@ -305,6 +335,7 @@ void LWM2M_Client::loop()
 		return;
 	}
 
+	if (client_status == AWAIT_REGISTRATION_RESPONSE) registration_routine();
 	update_routine();
 	observe_routine();
 
@@ -390,17 +421,15 @@ void LWM2M_Client::advanceTime(uint16_t amount_in_seconds)
 
 uint8_t LWM2M_Client::check_registration_message(CoAP_message_t* c)
 {
-	if (c->header.type == COAP_ACK && c->header.returnCode == COAP_SUCCESS_CREATED)
+	if (c->header.type == COAP_ACK)
 	{
+		if (c->header.returnCode == COAP_SUCCESS_CREATED || c->header.returnCode == COAP_SUCCESS_CHANGED)
+		{
+			std::string loc_path = CoAP_get_option_string(c, COAP_OPTIONS_LOCATION_PATH);
+			if (loc_path.substr(0, 2) == "rd") return REGISTRATION_SUCCESS;
+		}
 		//TODO: Properly check registration message
-		//if (strcmp((const char*)(c->options.options[0].option_value), "rd")) std::cout << c->options.options[0].option_value << std::endl;
-
-
-
-		//temporary
-		std::string loc_path = CoAP_get_option_string(c, COAP_OPTIONS_LOCATION_PATH);
-		if (loc_path.substr(0,2) == "rd") return REGISTRATION_SUCCESS;
-		
+		//if (strcmp((const char*)(c->options.options[0].option_value), "rd")) std::cout << c->options.options[0].option_value << std::endl;		
 	}
 	return REGISTRATION_FAILED;
 	
@@ -515,12 +544,23 @@ uint8_t LWM2M_Client::client_deregister() {
 
 LWM2M_Object& LWM2M_Client::getObject(uint16_t object_id, uint8_t instance_id)
 {
-	for(uint8_t search_var = 0; search_var < next_obj_ptr; search_var++)
+#if defined(USE_VECTORS)
+	for(LWM2M_Object& o : objects_vector)
+	{
+		if (o.getObject_id() == object_id && o.getInstance_id() == instance_id)
+			return o;
+	}
+	return objects_vector.front();
+#else
+	for (uint8_t search_var = 0; search_var < next_obj_ptr; search_var++)
 	{
 		if (object_ids[search_var] == object_id && objects[search_var].getInstance_id() == instance_id)
 			return objects[search_var];
 	}
-	return objects[0];;
+	return objects[0];
+#endif
+	
+	
 }
 
 void LWM2M_Client::registrationInterfaceHandle(CoAP_message_t* c)
@@ -584,22 +624,42 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 
 bool LWM2M_Client::object_exists(uint16_t object_id)
 {
+#if defined(USE_VECTORS)
+	for(LWM2M_Object& o : objects_vector)
+	{
+		if (o.getObject_id() == object_id)
+			return true;
+	}
+	return false;
+#else
 	for (uint8_t search_var = 0; search_var < next_obj_ptr; search_var++)
 	{
 		if (object_ids[search_var] == object_id)
 			return true;
 	}
 	return false;
+#endif
+	
 }
 
 bool LWM2M_Client::object_exists(uint16_t object_id, uint16_t instance_id)
 {
+#if defined(USE_VECTORS)
+	for (LWM2M_Object o : objects_vector)
+	{
+		if (o.getObject_id() == object_id && o.getInstance_id() == instance_id)
+			return true;
+	}
+	return false;
+#else
 	for (uint8_t search_var = 0; search_var < next_obj_ptr; search_var++)
 	{
 		if (object_ids[search_var] == object_id && objects[search_var].getInstance_id() == instance_id)
 			return true;
 	}
 	return false;
+#endif
+	
 }
 
 bool LWM2M_Client::check_URI(URI_Path_t* uri)
@@ -632,10 +692,14 @@ bool LWM2M_Client::check_URI(URI_Path_t* uri)
 
 void LWM2M_Client::createObject(uint16_t object_id, uint8_t instance_id)
 {
+#if defined(USE_VECTORS)
+	objects_vector.push_back(LWM2M_Object(object_id, instance_id));
+#else
 	object_ids[next_obj_ptr] = object_id;
 	LWM2M_Object obj(object_id, instance_id);
 	objects[next_obj_ptr] = obj;
 	next_obj_ptr++;
+#endif
 }
 
 void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value)
@@ -997,6 +1061,7 @@ uint8_t LWM2M_Client::add_observe_entity(CoAP_message_t* c, URI_Path_t* uri)
 
 void LWM2M_Client::observe_routine()
 {
+	if (client_status == NOT_REGISTERED || client_status == AWAIT_REGISTRATION_RESPONSE || client_status == AWAIT_UPDATE_RESPONSE) return;
 	uint8_t obs_entities = 0;
 	for(uint8_t i = 0; i < MAX_OBSERVED_ENTITIES; i++)
 	{
@@ -1006,6 +1071,16 @@ void LWM2M_Client::observe_routine()
 			bool value_changed = false;
 			if (observed_entities[i].uri.path_depth < REQUEST_RESOURCE)
 			{
+#if defined(USE_VECTORS)
+				for(LWM2M_Resource& r : getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).resources_vector)
+				{
+					if(r.getValueChanged())
+					{
+						value_changed = true;
+						break;
+					}
+				}
+#else
 				for(uint8_t n = 0; n < getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).next_resource_ptr; n++)
 				{
 					if (getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).resources[n].getValueChanged())
@@ -1015,6 +1090,7 @@ void LWM2M_Client::observe_routine()
 					}
 
 				}
+#endif
 			}
 			else
 			{
@@ -1085,6 +1161,17 @@ void LWM2M_Client::lwm_delete(CoAP_message_t* c, URI_Path_t* uri)
 	{
 		respond(c, COAP_C_ERR_NOT_ALLOWED);
 	}
+#if defined(USE_VECTORS)
+	uint8_t ctr = 0;
+	for(LWM2M_Object& o : objects_vector)
+	{
+		if (o.getObject_id() == uri->obj_id && o.getInstance_id() == uri->instance_id)
+		{
+			objects_vector.erase(objects_vector.begin() + ctr);
+		}
+		ctr++;
+	}
+#else
 	for(uint8_t i = 0; i < next_obj_ptr; i++)
 	{
 		if (objects[i].getObject_id() == uri->obj_id && objects[i].getInstance_id() == uri->instance_id)
@@ -1099,6 +1186,7 @@ void LWM2M_Client::lwm_delete(CoAP_message_t* c, URI_Path_t* uri)
 			break;
 		}
 	}
+#endif
 }
 
 

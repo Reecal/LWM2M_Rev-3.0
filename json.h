@@ -3,6 +3,7 @@
 #include <iostream>
 #include "LWM2M_Object.h"
 #include "LWM2M_Resource.h"
+#include "LWM2M_Defines.h"
 #include "CoAP.hpp"
 #include <algorithm>
 #include "Utils.h"
