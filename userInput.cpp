@@ -185,7 +185,8 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
                     else std::cout << "Too few arguments for a " << token << " command." << std::endl;
                 }
                 //-------------------------------------------------------------- SET
-                else if (token == "set" || token == "update")
+                //else if (token == "set" || token == "update")
+                else if (token == "set")
                 {
                     //std::cout << "The token is set" << std::endl;
 
@@ -326,7 +327,10 @@ void userInputLWM(LWM2M_Client& client, bool& isFinished, bool& applicationRun)
                 else if (token == "") {}
                 else if (token == "Hello" || token == "Hi" || token == "hello" || token == "hi" || token == "whatsup") std::cout << "Hello to you too bro!" << std::endl;
 
-
+                else if (token == "update")
+                {
+					client.send_update();
+                }
                 //-------------------------------------------------------------- TEST
                 else if (token == "test")
                 {

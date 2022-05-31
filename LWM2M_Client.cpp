@@ -53,7 +53,7 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 
 	LWM2M_Object obj3(3);
 	//obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"Diploma Thesis Radim Dvorak");
-	obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"UIDASCAVWHXXDXTGUNVSSTFGMDMXNQHICNKUPKTMSRKXRGGNUCINXPVMSIKHAURCIDYXPUMKMWKHERUBVDOWUMJNVWWVRRACUBCMWOXLLISRCPSYUJVPWFESCDQVUSXRTAFSQFFDNAWSQQRLAPCYWIRCLKXJDYBABGUSLAXCDUWTNOFOGJPDRIFGUGRBFSBICVDPYBTCYQXMHFDNPTTJEYRYFJAMFDXJCBYBDVFEOFQYKWMAQIMUKEVPQWFVCDHE");
+	obj3.add_resource(0, TYPE_STRING, READ_ONLY, false, (char*)"DP Thesis RD");
 	obj3.add_resource(3, TYPE_STRING, READ_ONLY, false, (char*)"Rev 3.0");
 	obj3.add_executable_resource(4, reboot_cb);
 	obj3.add_resource(11, TYPE_INT, READ_ONLY, true, 0);
