@@ -42,12 +42,25 @@ std::string LWM2M_Resource::getValue(int depth)
 	return string_val[depth];
 }
 
+/**
+ *	Method that checks whether a value exists within the scope of this resource.
+ *
+ *	INPUT : value_depth - position of value in an array
+ *
+ *	RETURN: bool - value exists within this resource
+ */
 bool LWM2M_Resource::value_exists(uint8_t value_depth)
 {
 	if (value_depth < next_value_ptr) return true;
 	return false;
 }
 
+/**
+ *	Updates value within a resource
+ *
+ *	INPUT : res_val - new value in string format
+ *			depth - position of the value in an array in case of multivalue resource
+ */
 void LWM2M_Resource::update_resource(std::string res_val, uint8_t depth)
 {
 	uint8_t idx = depth;

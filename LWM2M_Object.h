@@ -64,7 +64,7 @@ public:
 	 *
 	 *	INPUT : rsrc_id - Resource ID
 	 *
-	 *	OUTPUT: bool - resource exists within this object
+	 *	RETURN: bool - resource exists within this object
 	 */
 	bool resource_exists(uint16_t rsrc_id);
 	bool resource_exists(uint16_t rsrc_id, uint16_t sub_res_id);

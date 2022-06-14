@@ -60,8 +60,8 @@ public:
 	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, char* default_value = nullptr);
 	LWM2M_Resource(uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, uint8_t(*execute_func)());
 
-	void update_resource(std::string res_val, uint8_t depth = 0);
-
+	
+	//Getters & Setters
 	uint16_t getResource_id()
 	{
 		return resource_id;
@@ -118,17 +118,44 @@ public:
 		execute_cb = execute_func;
 	}
 
+
+	/**
+	 *	Method that checks whether a value exists within the scope of this resource.
+	 *
+	 *	INPUT : value_depth - position of value in an array
+	 *
+	 *	RETURN: bool - value exists within this resource
+	 */
 	bool value_exists(uint8_t value_depth);
-	 
+
+	/**
+	 *	Executes callback
+	 *
+	 *	RETURN : returns value specified in execute function
+	 */
 	uint8_t execute()
 	{
 		return execute_cb();
 	}
 
+
+	/**
+	 *	Clears the value changed indicator within a specified value
+	 *
+	 */
 	void clearValueChanged()
 	{
 		value_changed = false;
 	}
+
+	/**
+	 *	Updates value within a resource
+	 *
+	 *	INPUT : res_val - new value in string format
+	 *			depth - position of the value in an array in case of multivalue resource
+	 */
+	void update_resource(std::string res_val, uint8_t depth = 0);
+
 	
 	
 };

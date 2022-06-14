@@ -84,6 +84,13 @@ LWM2M_Resource& LWM2M_Object::getResource(uint16_t rsrc_id)
 #endif
 }
 
+/**
+ *	Method that checks whether a resource exists within the scope of this object.
+ *
+ *	INPUT : rsrc_id - Resource ID
+ *
+ *	RETURN: bool - resource exists within this object
+ */
 bool LWM2M_Object::resource_exists(uint16_t rsrc_id)
 {
 #if defined(USE_VECTORS)

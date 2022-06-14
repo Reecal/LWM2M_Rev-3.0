@@ -171,6 +171,7 @@ private:
 	 *	INPUT  : c - Coap message struct
 	 *
 	 */
+	//TODO Implement this method
 	void registrationInterfaceHandle(CoAP_message_t* c);
 
 	/**
@@ -179,6 +180,7 @@ private:
 	 *	INPUT  : c - Coap message struct
 	 *
 	 */
+	 //TODO Implement this method
 	void bootstrapInterfaceHandle(CoAP_message_t* c);
 
 	/**
@@ -278,6 +280,7 @@ private:
 	 *			 uri - URI struct that contains path to the requested entity
 	 *
 	 */
+	 //TODO Implement this method according to the standard
 	void lwm_discover(CoAP_message_t* c, URI_Path_t* uri);
 
 	/**
@@ -288,7 +291,6 @@ private:
 	 *
 	 *	
 	 */
-	 //TODO Implement this method according to the standard
 	void lwm_delete(CoAP_message_t* c, URI_Path_t* uri);
 
 	/**

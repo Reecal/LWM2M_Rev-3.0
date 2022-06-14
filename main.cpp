@@ -39,26 +39,33 @@
 
 #pragma comment(lib,"ws2_32.lib")
 
+//helper variables
 static bool isFinishedApp = false;
 static bool applicationRunApp = true;
 extern bool main_loop_bool;
 
-void changeReference(const char*& ptr, const char* text);
+//functions definitions
 uint8_t rebootfunc();
 uint8_t send_fc(char* data, uint16_t data_len);
 void application_timer(LWM2M_Client& client, bool& applicationRun);
 
+//Initialize socket for Ethernet
 SOCKET s;
+
+//Initialize BG77 for NB-IoT and LTE Cat-M
 BG77 bg(false);
+
+//Initialize client
 LWM2M_Client client("RD_EP", rebootfunc);
 
 int main()
 {
     srand(time(NULL));
 
-	
+	//Register autosend callback
     client.register_send_callback(send_fc);
 
+    //Create some basic objects and resources
 	client.createObject(3441, 0);
     client.addResource(3441, 0, 110, TYPE_STRING, READ_WRITE, false, (char*)"initial value");
     client.addResource(3441, 0, 120, TYPE_INT, READ_WRITE, false, (int) 1024);
@@ -86,20 +93,9 @@ int main()
     client.createObject(3342, 0);
     client.addResource(3342, 0, 5500, TYPE_BOOLEAN, READ_ONLY, false, true);
 
-    /*client.createObject(3328, 0);
-    client.addResource(3328, 0, 5601, TYPE_FLOAT, READ_ONLY, false, (float)3.1452);*/
+    client.createObject(3328, 0);
+    client.addResource(3328, 0, 5601, TYPE_FLOAT, READ_ONLY, false, (float)3.1452);
 
-    /*client.createObject(4, 1);
-#if defined(USE_BG77)
-    client.addResource(4, 1, 0, TYPE_INT, READ_ONLY, false, (int)7);
-#else
-    client.addResource(4, 1, 0, TYPE_INT, READ_ONLY, false, (int)41);
-#endif
-    client.addResource(4, 1, 1, TYPE_INT, READ_ONLY, true, (int)20);
-    client.addResource(4, 1, 2, TYPE_INT, READ_ONLY, false, (int)-70);
-    client.addResource(4, 1, 4, TYPE_STRING, READ_ONLY, false, (char*)"192.168.10.128");
-    client.addResource(4, 1, 5, TYPE_STRING, READ_ONLY, false, (char*)"192.168.10.1");
-    client.addResource(4, 1, 7, TYPE_STRING, READ_ONLY, false, (char*)"lpwa.vodafone.iot");*/
 
     
 
@@ -122,17 +118,6 @@ int main()
 
     LOG_INFO("Socket Initialized...");
 
-    /*if (client.getStatus() == NOT_REGISTERED)
-    {
-        char* output;
-        uint8_t response = client.getTxData(output);
-        //send(s, output, strlen(output), 0);
-        client.send(output, strlen(output));
-       // send(s, , dat.length(), 0);
-    }*/
-       
-    int ms_ctr = 0;
-    int num_ovf = 0;
     main_loop_bool = true;
    
 #if defined(USE_BG77)
@@ -147,7 +132,10 @@ int main()
 
 #endif
 
+    //Start respective threads
+    //User input for debugging purposes
     std::thread userInterfaceThread(userInputLWM, std::ref(client), std::ref(isFinishedApp), std::ref(applicationRunApp));
+    //Timer thread to provide timing to the library - simulates timer interrupts or freeRTOS scheduling
     std::thread timerThread(application_timer, std::ref(client), std::ref(applicationRunApp));
 
     while (applicationRunApp)
@@ -159,7 +147,6 @@ int main()
         if (bg.readData(outputBuffer) == BG77_INCOMING_DATA)
         {
             Sleep(100);
-            //std::cout << "Main pull \r\n";
             int len = 1;
             do
             {
@@ -179,28 +166,15 @@ int main()
 
         }
 #endif
-        
-        //client.loop();
-        /*ms_ctr++;
-        if (ms_ctr >= 10)
-        {
-            client.advanceTime(1);
-            ms_ctr = 0;
-            num_ovf++;
-        }
-        //std::cout << ms_ctr << std::endl;
-        Sleep(100);*/
 
-        
+ 
     }
 
+    //Terminate the program
     userInterfaceThread.join();
     timerThread.join();
     client.client_deregister();
-    //client.loop();
 #if defined(USE_BG77)
-    /*bg.sendRAW("AT+QICLOSE=1", bg77_buffer);
-    bg.sendRAW("AT+QIDEACT=1", bg77_buffer);*/
     Sleep(1000);
     bg.closeSocket(1);
     bg.deactivatePDP(1);
@@ -208,10 +182,6 @@ int main()
     LOG_INFO("Exiting program...");
 }
 
-void changeReference(const char*& ptr, const char* text)
-{
-    ptr = text;
-}
 
 uint8_t rebootfunc()
 {
@@ -223,13 +193,8 @@ uint8_t rebootfunc()
 
 uint8_t send_fc(char* data, uint16_t data_len)
 {
+    //Send data via Ethernet or BG77
 #if defined(USE_BG77)
-    /*char bg77_buffer[1500];
-    sprintf_s(bg77_buffer, "AT+QISEND=1,%d,\"62.245.65.221\",9431", data_len);
-    bg.sendRAW(bg77_buffer, bg77_buffer);
-    //std::cout << "OUT : " << bg77_buffer << std::endl;
-    bg.sendRAW(data, bg77_buffer);
-    //std::cout << "OUT : " << bg77_buffer << std::endl;*/
     bg.sendData(1, data, data_len, (char*)"62.245.65.221", 9431);
     return 0;
 #else
@@ -240,6 +205,7 @@ uint8_t send_fc(char* data, uint16_t data_len)
 
 void application_timer(LWM2M_Client& client, bool& applicationRun)
 {
+    //Move library time by 1s each second
 	while (applicationRun)
 	{
         Sleep(1000);

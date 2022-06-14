@@ -1,5 +1,10 @@
 #pragma once
 
+/*
+ * This library is for testing purposes. Poorly written just to test various formats that Leshan supports.
+ * Written to match syntax of JSON used by Leshan server.
+ */
+
 #include <iostream>
 #include "LWM2M_Object.h"
 #include "LWM2M_Resource.h"
@@ -11,6 +16,7 @@
 #define JSON_SUCCESS					0
 #define JSON_INVALID_VALUE_FORMAT		1
 #define JSON_INVALID_VALUE_TYPE			2
+
 
 
 namespace json {

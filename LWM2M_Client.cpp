@@ -37,6 +37,13 @@ CoAP_Message_t last_message;
 
 uint8_t(*send_update_cb)();
 
+/**
+ *	Default constructor for the Client class
+ *
+ *	INPUT  : ep_name - Endpoint name - Name of the device
+ *			 reb - Pointer to a reboot function
+ *
+ */
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name(ep_name), reboot_cb(reb)
 {
 	//Create mandatory objects
@@ -76,7 +83,15 @@ LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name
 }
 
 
-
+/**
+ *	Main function to process incoming message.
+ *
+ *	INPUT  : data - Data to be copied into receive buffer
+ *			 data_length - length of data
+ *
+ *	RETURN : Success or failure (Buffer Overflow)
+ *
+ */
 uint8_t LWM2M_Client::receive(char* data, uint16_t data_length)
 {
 	uint8_t newHeadIndex = (rxBuffer_head + 1) & (RX_BUFFER_MAX_SIZE-1);
@@ -94,11 +109,24 @@ uint8_t LWM2M_Client::receive(char* data, uint16_t data_length)
 	return 0;
 }
 
+/**
+ *	Query for the current status of the client.
+ *
+ *	RETURN : Client status
+ *
+ */
 LWM2M_Status LWM2M_Client::getStatus()
 {
 	return client_status;
 }
 
+/**
+ *	Copies data from the TX buffer to the outputBuffer. If it is the last message, clears TX flag.
+ *
+ *	INPUT  : outputBuffer - output buffer to which data will be copied
+ *	RETURN : Success or failure (Buffer overflow)
+ *
+ */
 uint8_t LWM2M_Client::getTxData(char*& outputBuffer)
 {
 	if (txBuffer_head == txBuffer_tail) return NO_DATA_AVAILABLE;
@@ -129,6 +157,14 @@ uint8_t LWM2M_Client::getTxData(char*& outputBuffer)
 
 }
 
+/**
+*	Schedules TX of data to the TX buffer and sets corresponding flags
+*	
+*	INPUT : data - data to be sent
+*
+*	RETURN : Success or Error code
+*
+*/
 uint8_t LWM2M_Client::schedule_tx(char* data)
 {
 	uint8_t newHeadIndex = (txBuffer_head + 1) & (TX_BUFFER_MAX_SIZE-1);
@@ -145,6 +181,14 @@ uint8_t LWM2M_Client::schedule_tx(char* data)
 	return 0;
 }
 
+/**
+ *	Reads incoming data
+ *
+ *	INPUT : outputBuffer - buffer in which read data will be copied to
+ *
+ *	RETURN : Data available or No data available and their respective codes.
+ *
+ */
 uint16_t LWM2M_Client::getRxData(char*& outputBuffer)
 {
 	if (!RX_FLAG) return NO_DATA_AVAILABLE;
@@ -159,6 +203,15 @@ uint16_t LWM2M_Client::getRxData(char*& outputBuffer)
 	return msgLen;
 }
 
+
+/**
+ *	Registers and saved pointer to a function used to send data
+ *
+ *	INPUT : send_func - Pointer to a send function. Has to have two inputs. Data and data_length
+ *
+ *
+ *	RETURN : Value saved in a resource in a string format
+ */
 void LWM2M_Client::register_send_callback(uint8_t(*send_func)(char* data, uint16_t data_len))
 {
 	send_cb = send_func;
@@ -169,6 +222,12 @@ uint8_t LWM2M_Client::send(char* data, uint16_t data_len)
 	return send_cb(data, data_len);
 }
 
+/**
+ *	Directly sends or schedules a TX with a registration message to the server
+ *
+ *	RETURN : Success or Error code
+ *
+ */
 uint8_t LWM2M_Client::send_registration()
 {
 	//Assemble link format data according to the specification.
@@ -244,6 +303,13 @@ uint8_t LWM2M_Client::send_registration()
 
 }
 
+
+/**
+ *	Directly sends or schedules update
+ *
+ *	RETURN : Success or failure
+ *
+ */
 uint8_t LWM2M_Client::send_update()
 {
 	//Assemble update message
@@ -281,6 +347,13 @@ uint8_t LWM2M_Client::send_update()
 
 }
 
+
+/**
+ *	Checks last update or registration timings and decides whether an update should be sent
+ *
+ *	RETURN : Update sent or not
+ *
+ */
 uint8_t LWM2M_Client::update_routine()
 {
 	//If client is not registered return from the routine.
@@ -327,6 +400,13 @@ uint8_t LWM2M_Client::update_routine()
 	return 0;
 }
 
+
+/**
+ *	Checks registration timeout
+ *
+ *	RETURN : Re-registration required
+ *
+ */
 uint8_t LWM2M_Client::registration_routine()
 {
 	if (sys_time >= last_update_sent + UPDATE_HYSTERESIS) client_status = NOT_REGISTERED;
@@ -334,6 +414,11 @@ uint8_t LWM2M_Client::registration_routine()
 
 }
 
+
+/**
+ *	Main function that schedules all previous defined functions and methods. Also checks integrity of an incoming message.
+ *
+ */
 void LWM2M_Client::loop()
 {
 	//Check if the client is registered or not
@@ -417,6 +502,12 @@ void LWM2M_Client::loop()
 
 }
 
+/**
+ *	Main function used to advance time within the library.
+ *
+ *	INPUT  : amount_in_seconds - Amount in seconds to increment library (system) time.
+ *
+ */
 void LWM2M_Client::advanceTime(uint16_t amount_in_seconds)
 {
 	sys_time += amount_in_seconds;
@@ -429,6 +520,13 @@ void LWM2M_Client::advanceTime(uint16_t amount_in_seconds)
 	}
 }
 
+
+/**
+ *	Parses registration message and decides if the registration was successful or not.
+ *
+ *	RETURN : Registration successful or Registration Failed
+ *
+ */
 uint8_t LWM2M_Client::check_registration_message(CoAP_message_t* c)
 {
 	if (c->header.type == COAP_ACK)
@@ -444,6 +542,15 @@ uint8_t LWM2M_Client::check_registration_message(CoAP_message_t* c)
 	
 }
 
+
+/**
+ *	Parses update message and decides if the update was successful
+ *
+ *	INPUT  : c - Coap message struct
+ *
+ *	RETURN : Update successful or Update Failed
+ *
+ */
 uint8_t LWM2M_Client::check_update_message(CoAP_message_t* c)
 {
 	if (c->header.type == COAP_ACK && c->header.returnCode == COAP_SUCCESS_CHANGED)
@@ -458,6 +565,13 @@ uint8_t LWM2M_Client::check_update_message(CoAP_message_t* c)
 
 }
 
+
+/**
+ *	Parses registration response and saved the registration ID in reg_id variable
+ *
+ *	INPUT  : c - Coap message struct
+ *
+ */
 void LWM2M_Client::save_registration_id(CoAP_message_t* c)
 {
 	//TODO: Parse it properly from URI
@@ -468,6 +582,13 @@ void LWM2M_Client::save_registration_id(CoAP_message_t* c)
 	reg_id[c->options.options[1].option_length] = 0;
 }
 
+/**
+ *	Checks message options and forwards them to the respective interface handle function
+ *
+ *	INPUT  : c - Coap message struct
+ *
+ *	RETURN	: 0
+ */
 uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 {
 	print_message_info(c);
@@ -514,6 +635,13 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 	return 0;
 }
 
+
+/**
+ *	Debug method that prints basic options of the coap message into the console
+ *
+ *	INPUT  : c - Coap message struct
+ *
+ */
 void LWM2M_Client::print_message_info(CoAP_message_t* c)
 {
 
@@ -529,6 +657,11 @@ void LWM2M_Client::print_message_info(CoAP_message_t* c)
 
 }
 
+/**
+ *	Deregisters client from the LWM2M Server
+ *
+ *	RETURN : Success or failure.
+ */
 uint8_t LWM2M_Client::client_deregister() {
 
 	//Check whether client is not already deregistered
@@ -549,6 +682,16 @@ uint8_t LWM2M_Client::client_deregister() {
 	return 0;
 }
 
+
+/**
+ *	Method used to get a specific object. Made public for debug purposes
+ *
+ *	INPUT  : object_id - ID of Object to get
+ *			 instance_id - Instance ID of the object
+ *
+ *	RETURN : Pointer to the specified object
+ *
+ */
 LWM2M_Object& LWM2M_Client::getObject(uint16_t object_id, uint8_t instance_id)
 {
 #if defined(USE_VECTORS)
@@ -570,14 +713,38 @@ LWM2M_Object& LWM2M_Client::getObject(uint16_t object_id, uint8_t instance_id)
 	
 }
 
+
+/**
+ *	Method that handles registration interface messages
+ *
+ *	INPUT  : c - Coap message struct
+ *
+ */
+
 void LWM2M_Client::registrationInterfaceHandle(CoAP_message_t* c)
 {
 	
 }
+
+
+/**
+ *	Method that handles bootstrap interface messages
+ *
+ *	INPUT  : c - Coap message struct
+ *
+ */
 void LWM2M_Client::bootstrapInterfaceHandle(CoAP_message_t* c)
 {
 	
 }
+
+
+/**
+ *	Method that handles device management and information reporting interface messages. Calls respective access methods.
+ *
+ *	INPUT  : c - Coap message struct
+ *
+ */
 void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_message_t* c)
 {
 
@@ -637,6 +804,14 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 
 }
 
+/**
+ *	Method that checks whether an object exists within the scope of client.
+ *
+ *	INPUT : object_id - Object ID
+ *			instance_id - Instance ID
+ *
+ *	OUTPUT: bool - resource exists within this object
+ */
 bool LWM2M_Client::object_exists(uint16_t object_id)
 {
 #if defined(USE_VECTORS)
@@ -679,6 +854,13 @@ bool LWM2M_Client::object_exists(uint16_t object_id, uint16_t instance_id)
 	
 }
 
+
+/**
+ *	Performs an URI check to confirm the target entity exists
+ *
+ *	INPUT  : uri - URI struct that contains path to the requested entity
+ *
+ */
 bool LWM2M_Client::check_URI(URI_Path_t* uri)
 {
 	//If Invalid URI depth
@@ -715,6 +897,14 @@ bool LWM2M_Client::check_URI(URI_Path_t* uri)
 	return true;
 }
 
+
+/**
+ *	Creates object with specified ID and instance ID and adds it to the vector / array
+ *
+ *	INPUT  : object_id - ID of Object to get
+ *			 instance_id - Instance ID of the object
+ *
+ */
 void LWM2M_Client::createObject(uint16_t object_id, uint8_t instance_id)
 {
 #if defined(USE_VECTORS)
@@ -727,6 +917,18 @@ void LWM2M_Client::createObject(uint16_t object_id, uint8_t instance_id)
 #endif
 }
 
+/**
+ *	Methods used to create a resource within an object. Used to relay information to the Resource class
+ *
+ *	INPUT : object_id	- Object ID
+ *			instance_id	- Instance ID
+ *			resource_id - Resource ID
+ *			type		- Type of data held in the resource
+ *			permissions - Permission of access to the data
+ *			multi_level - Whether the resource is a type of field eg. multiple data inside the resource
+ *			default_value - Default value.
+ *
+ **/
 void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t type, uint8_t permissions, bool multi_level, float default_value)
 {
 	if (object_exists(object_id,instance_id))
@@ -763,6 +965,13 @@ void LWM2M_Client::addResource(uint16_t object_id, uint8_t instance_id, uint16_t
 	}
 }
 
+/**
+ *	Performs LWM2M Read Operation as defined by the specification
+ *
+ *	INPUT  : c - Coap message struct
+ *			 uri - URI struct that contains path to the requested entity
+ *
+ */
 void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 {
 	//At this point URI is good
@@ -820,6 +1029,14 @@ void LWM2M_Client::lwm_read(CoAP_message_t* c,URI_Path_t* uri)
 
 }
 
+
+/**
+ *	Performs LWM2M Write Operation as defined by the specification
+ *
+ *	INPUT  : c - Coap message struct
+ *			 uri - URI struct that contains path to the requested entity
+ *
+ */
 void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 {
 	//At this point URI is good
@@ -864,6 +1081,13 @@ void LWM2M_Client::lwm_write(CoAP_message_t* c, URI_Path_t* uri)
 
 }
 
+/**
+ *	Performs LWM2M Execute Operation as defined by the specification
+ *
+ *	INPUT  : c - Coap message struct
+ *			 uri - URI struct that contains path to the requested entity
+ *
+ */
 void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
 {
 	if (uri->path_depth >= REQUEST_RESOURCE)
@@ -896,6 +1120,15 @@ void LWM2M_Client::lwm_execute(CoAP_message_t* c, URI_Path_t* uri)
 	}
 }
 
+/**
+ *	Method used to respond to the incoming message. Used to respond with error codes.
+ *
+ *	INPUT  : c - Coap message struct of the message to respond to
+ *			 return_code - Return code to be sent within the message
+ *			 payload - Payload of the response message. Default is none in case of error message
+ *			 payload_format - Data format used in payload to set the Format option accordingly.
+ *
+ */
 void LWM2M_Client::respond(CoAP_message_t* c, uint8_t return_code, std::string payload, uint16_t payload_format)
 {
 	LOG_INFO("Responding to the request. Payload: " + payload);
@@ -916,6 +1149,15 @@ void LWM2M_Client::respond(CoAP_message_t* c, uint8_t return_code, std::string p
 	send((char*)(response.raw_data.masg.data()), response.raw_data.message_total);
 }
 
+
+/**
+ *	Method used to respond to send a specific resource.
+ *
+ *	INPUT  : c - Coap message struct of the message to respond to
+ *			 uri - URI struct that contains path to the requested entity
+ *			 resource - Pointer to a resource
+ *
+ */
 void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resource& resource)
 {
 	std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
@@ -999,7 +1241,14 @@ void LWM2M_Client::send_resource(CoAP_message_t* c, URI_Path_t* uri, LWM2M_Resou
 
 
 
-
+/**
+ *	Method used to check whether requested format is supported by the library and the device.
+ *
+ *	INPUT  : c - Coap message struct of the message to respond to
+ *			 option - Option to be checked.
+ *
+ *	RETURN : True - Format is supported, False - Format is not supported.
+ */
 bool LWM2M_Client::check_message_format(CoAP_message_t* c, uint16_t option)
 {
 	std::string s = CoAP_get_option_string(c, option);
@@ -1017,6 +1266,17 @@ bool LWM2M_Client::check_message_format(CoAP_message_t* c, uint16_t option)
 	return true;
 }
 
+
+/**
+ *	Changes value saved inside a resource
+ *
+ *	INPUT : object_id - Object ID
+ *			instance_id - Instance ID
+ *			resource_id - Resource ID
+ *			value - value in string format
+ *			depth - position in array in case of array-type resources
+ *
+ */
 void LWM2M_Client::updateResource(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, std::string value, uint8_t depth)
 {
 	if(object_exists(object_id, instance_id))
@@ -1036,6 +1296,17 @@ void LWM2M_Client::updateResource(uint16_t object_id, uint8_t instance_id, uint1
 	}
 }
 
+/**
+ *	Changes value saved inside a resource
+ *
+ *	INPUT : object_id - Object ID
+ *			instance_id - Instance ID
+ *			resource_id - Resource ID
+ *			value - value in string format
+ *			depth - position in array in case of array-type resources
+ *
+ *	RETURN : Value saved in a resource in a string format
+ */
 std::string LWM2M_Client::getResourceValue(uint16_t object_id, uint8_t instance_id, uint16_t resource_id, uint8_t depth)
 {
 	if (object_exists(object_id, instance_id))
@@ -1050,6 +1321,14 @@ std::string LWM2M_Client::getResourceValue(uint16_t object_id, uint8_t instance_
 }
 
 
+/**
+ *	Method used to create a new observation tag and add it to the field of tags.
+ *
+ *	INPUT  : c - Coap message struct of the message to respond to
+ *			 uri - URI struct that contains path to the requested entity
+ *
+ *	RETURN : Error or Success.
+ */
 uint8_t LWM2M_Client::add_observe_entity(CoAP_message_t* c, URI_Path_t* uri)
 {
 	for(uint8_t n = 0; n < MAX_OBSERVED_ENTITIES; n++)
@@ -1084,16 +1363,25 @@ uint8_t LWM2M_Client::add_observe_entity(CoAP_message_t* c, URI_Path_t* uri)
 	
 }
 
+/**
+ *	Periodically checks all the observation tags and whether notify should be sent.
+ *
+ */
 void LWM2M_Client::observe_routine()
 {
+	//Check if client is registered
 	if (client_status == NOT_REGISTERED || client_status == AWAIT_REGISTRATION_RESPONSE || client_status == AWAIT_UPDATE_RESPONSE) return;
 	uint8_t obs_entities = 0;
+
+	//Go through the tag field
 	for(uint8_t i = 0; i < MAX_OBSERVED_ENTITIES; i++)
 	{
+		//If the entity is currently being observed check attributes
 		if (observed_entities[i].currently_observed == true)
 		{
 			bool is_over_max = observed_entities[i].last_notify_sent >= observed_entities[i].notify_max;
 			bool value_changed = false;
+			//If the entity is object or instance check all resources for a value change
 			if (observed_entities[i].uri.path_depth < REQUEST_RESOURCE)
 			{
 #if defined(USE_VECTORS)
@@ -1121,15 +1409,20 @@ void LWM2M_Client::observe_routine()
 			{
 				value_changed = getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getValueChanged();
 			}
+
+			//Decide whether notify should be sent
 			bool is_over_min = observed_entities[i].last_notify_sent >= observed_entities[i].notify_min;
 			bool already_sent = observed_entities[i].last_notify_sent == 0;
 			bool notify_should_be_sent = is_over_max || (value_changed && is_over_min) && !already_sent;
 			if (notify_should_be_sent)
 			{
+				//Assemble the message and payload
 				CoAP_Message_t notify_message;
 				CoAP_tx_setup(&notify_message, COAP_NON, 8, COAP_SUCCESS_CONTENT, observed_entities[i].observe_mid++, observed_entities[i].observe_token);
 				CoAP_add_option(&notify_message, COAP_OPTIONS_OBSERVE, observed_entities[i].observed_val++);
 				std::string payload;
+
+				//If observed entity is object or instance use MultiValue format
 				if (observed_entities[i].observe_depth <= REQUEST_INSTANCE || getObject(observed_entities[i].uri.obj_id, observed_entities[i].uri.instance_id).getResource(observed_entities[i].uri.resource_id).getMultiLevel() == true)
 				{
 					if (observed_entities[i].observe_depth == REQUEST_OBJECT) payload = json::createJSON_Object(getObject(observed_entities[i].uri.obj_id));
@@ -1140,6 +1433,8 @@ void LWM2M_Client::observe_routine()
 					}
 					CoAP_add_option(&notify_message, COAP_OPTIONS_CONTENT_FORMAT, MULTI_VALUE_FORMAT);
 				}
+
+				//Use single value format
 				else
 				{
 #if SINGLE_VALUE_FORMAT == FORMAT_PLAIN_TEXT
@@ -1165,11 +1460,26 @@ void LWM2M_Client::observe_routine()
 	
 }
 
+/**
+ *	Performs LWM2M Discover Operation as defined by the specification
+ *
+ *	INPUT  : c - Coap message struct
+ *			 uri - URI struct that contains path to the requested entity
+ *
+ */
 void LWM2M_Client::lwm_discover(CoAP_message_t* c, URI_Path_t* uri)
 {
 	//if (uri->path_depth == REQUEST)
 }
 
+/**
+ *
+ *	Performs LWM2M Create Operation as defined by the specification
+ *
+ *	INPUT  : c - Coap message struct
+ *			 uri - URI struct that contains path to the requested entity
+ *
+ */
 void LWM2M_Client::lwm_create(CoAP_message_t* c, URI_Path_t* uri)
 {
 	if (uri->path_depth > REQUEST_OBJECT) //Creation os entities other than objects is not allowed (OMA TS. V1.0.2 20180209 page 80)
@@ -1180,6 +1490,14 @@ void LWM2M_Client::lwm_create(CoAP_message_t* c, URI_Path_t* uri)
 
 }
 
+/**
+ *	Performs LWM2M Delete Operation as defined by the specification
+ *
+ *	INPUT  : c - Coap message struct
+ *			 uri - URI struct that contains path to the requested entity
+ *
+ *
+ */
 void LWM2M_Client::lwm_delete(CoAP_message_t* c, URI_Path_t* uri)
 {
 	//At this point URI is good
