@@ -39,6 +39,7 @@ uint8_t(*send_update_cb)();
 
 LWM2M_Client::LWM2M_Client(const char* ep_name, uint8_t(*reb)()) : endpoint_name(ep_name), reboot_cb(reb)
 {
+	//Create mandatory objects
 	LWM2M_Object obj1(1);
 	obj1.add_resource(0, TYPE_INT, READ_ONLY, false, (int) 25);
 	obj1.add_resource(1, TYPE_INT, READ_WRITE, false, (int)600);
@@ -136,7 +137,6 @@ uint8_t LWM2M_Client::schedule_tx(char* data)
 	{
 		return BUFFER_OVERFLOW;
 	}
-	//client_status = REGISTERED_TX_DATA_READY;
 	
 	txData[txBuffer_head] = data;
 	txBuffer_head = newHeadIndex;
@@ -151,9 +151,7 @@ uint16_t LWM2M_Client::getRxData(char*& outputBuffer)
 
 	char* ptr = rxData[rxBuffer_tail];
 	uint16_t msgLen = msg_lengths[rxBuffer_tail];
-	//outputBuffer = rxData[rxBuffer_tail];
 	outputBuffer = ptr;
-	//strcpy_s(outputBuffer, 1000,rxData[rxBuffer_tail]);
 	rxBuffer_tail = (rxBuffer_tail + 1) & (RX_BUFFER_MAX_SIZE - 1);
 
 	if (rxBuffer_head == rxBuffer_tail) CLEAR_RX_FLAG();
@@ -173,14 +171,20 @@ uint8_t LWM2M_Client::send(char* data, uint16_t data_len)
 
 uint8_t LWM2M_Client::send_registration()
 {
+	//Assemble link format data according to the specification.
 	std::string pl = "</>;ct=";
+
+	//Add supported formats to the message
 #if MULTI_VALUE_FORMAT == SINGLE_VALUE_FORMAT
 	pl += std::to_string(MULTI_VALUE_FORMAT);
 #else
 	pl += "\"" + std::to_string(SINGLE_VALUE_FORMAT) + " " + std::to_string(MULTI_VALUE_FORMAT) + "\"";
 #endif
+
+	//Add version
 	pl += ";rt=\"oma.lwm2m\",";
 
+	//Add supported objects and instances to the message
 #if defined(USE_VECTORS)
 	uint8_t ctr = 0;
 	for(LWM2M_Object& o : objects_vector)
@@ -201,6 +205,7 @@ uint8_t LWM2M_Client::send_registration()
 	}
 #endif
 
+	//Assemble registration message
 	CoAP_message_t coap_message;
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
@@ -241,6 +246,7 @@ uint8_t LWM2M_Client::send_registration()
 
 uint8_t LWM2M_Client::send_update()
 {
+	//Assemble update message
 	CoAP_message_t coap_message;
 	CoAP_tx_setup(&coap_message, COAP_CON, 8, COAP_METHOD_POST, last_mid++);
 	CoAP_add_option(&coap_message, COAP_OPTIONS_URI_PATH, "rd");
@@ -277,12 +283,16 @@ uint8_t LWM2M_Client::send_update()
 
 uint8_t LWM2M_Client::update_routine()
 {
+	//If client is not registered return from the routine.
 	if (client_status == NOT_REGISTERED || client_status == AWAIT_REGISTRATION_RESPONSE) return 1;
+
+	//Do not continue if the update was already sent at this system time to prevent multiple messages
 	if (sys_time == last_update_sent) return 1;
+
+
 	if (client_status == AWAIT_UPDATE_RESPONSE)
 	{
-		//Try sending update again
-		//std::cout << "RETRY: " << (lastUpdate + lifetime) << " : " << (lastUpdate + lifetime) % UPDATE_RETRY_TIMEOUT << std::endl;
+		//Check timeout and send the message again if hysteresis is reached.
 		if (sys_time >= (lastUpdate + stoi(getObject(1).getResource(1).getValue())) && getObject(1).getResource(1).getValueChanged() != true)
 		{
 			client_status = NOT_REGISTERED;
@@ -335,6 +345,7 @@ void LWM2M_Client::loop()
 		return;
 	}
 
+	//If registration is currently in progress, check registration timeout
 	if (client_status == AWAIT_REGISTRATION_RESPONSE) registration_routine();
 	update_routine();
 	observe_routine();
@@ -356,7 +367,6 @@ void LWM2M_Client::loop()
 	}
 
 	//The message should be parsed correctly here
-	//print_message_info(&last_message);
 
 	switch (client_status)
 	{
@@ -429,7 +439,6 @@ uint8_t LWM2M_Client::check_registration_message(CoAP_message_t* c)
 			if (loc_path.substr(0, 2) == "rd") return REGISTRATION_SUCCESS;
 		}
 		//TODO: Properly check registration message
-		//if (strcmp((const char*)(c->options.options[0].option_value), "rd")) std::cout << c->options.options[0].option_value << std::endl;		
 	}
 	return REGISTRATION_FAILED;
 	
@@ -463,10 +472,13 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 {
 	print_message_info(c);
 
+	//If the message is reset, it could be a observe reset procedure. Leshan uses RST messages to cancel observe
 	if (c->header.type == COAP_RST)
 	{
+		//For each tag check MID and if found, cancel the observe
 		for (uint8_t i = 0; i < MAX_OBSERVED_ENTITIES; i++)
 		{
+
 			if (observed_entities[i].observe_mid - 1 == c->header.messageID)
 			{
 				LOG_INFO("Stoping observe for /" + std::to_string(observed_entities[i].uri.obj_id) + "/" + std::to_string(observed_entities[i].uri.instance_id) + "/" + std::to_string(observed_entities[i].uri.resource_id));
@@ -499,14 +511,11 @@ uint8_t LWM2M_Client::process_message(CoAP_message_t* c)
 	}
 
 	
-	
-
 	return 0;
 }
 
 void LWM2M_Client::print_message_info(CoAP_message_t* c)
 {
-
 
 	char outbuffer[50];
 	CoAP_get_option_chars(c, COAP_OPTIONS_LOCATION_PATH, outbuffer);
@@ -518,19 +527,17 @@ void LWM2M_Client::print_message_info(CoAP_message_t* c)
 	CoAP_get_option_chars(c, COAP_OPTIONS_OBSERVE, outbuffer);
 	std::cout << "OBSERVE: " << outbuffer << std::endl;
 
-
-
-
-
-
-
 }
 
 uint8_t LWM2M_Client::client_deregister() {
+
+	//Check whether client is not already deregistered
 	if (client_status == NOT_REGISTERED) {
 		LOG_WARNING("client_deregister: Client is not registered to any server");
 		return 1;
 	}
+
+	//Assemble and send the message
 	CoAP_message_t deregister_message;
 	CoAP_tx_setup(&deregister_message, COAP_CON, 8, COAP_METHOD_DELETE);
 	CoAP_add_option(&deregister_message, COAP_OPTIONS_URI_PATH, "rd");
@@ -574,10 +581,13 @@ void LWM2M_Client::bootstrapInterfaceHandle(CoAP_message_t* c)
 void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_message_t* c)
 {
 
+	//Parse URI from COAP message
 	URI_Path_t uri = CoAP_get_URI(c);
 
-
+	//Check URI
 	bool uri_good = check_URI(&uri);
+
+	//If message is not the same as the last message responded to
 	if (uri_good && c->header.messageID != last_mid_responded_to)
 	{
 		LOG_INFO("Request for " + CoAP_get_option_string(c, COAP_OPTIONS_URI_PATH));
@@ -586,15 +596,18 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 		{
 		case COAP_METHOD_GET:
 		{
-			std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
-			if (s[0] == APPLICATION_LINK_FORMAT)
-			{
-				lwm_discover(c, &uri);
-			}
-			else
-			{
-				lwm_read(c, &uri);
-			}
+				//Check accept option
+				std::string s = CoAP_get_option_string(c, COAP_OPTIONS_ACCEPT);
+
+				//if accept option is APP Link format = discover request
+				if (s[0] == APPLICATION_LINK_FORMAT)
+				{
+					lwm_discover(c, &uri);
+				}
+				else
+				{
+					lwm_read(c, &uri);
+				}
 		}
 			break;
 		case COAP_METHOD_POST:
@@ -611,8 +624,10 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 		}
 	}
 
+	//Else ignore the message
 	else
 	{
+		//If unknown state occurs return error message
 		if (c->header.type != COAP_ACK)
 		{
 			respond(c, COAP_C_ERR_NOT_FOUND);
@@ -625,6 +640,7 @@ void LWM2M_Client::deviceManagementAndInformationReportingInterfaceHandle(CoAP_m
 bool LWM2M_Client::object_exists(uint16_t object_id)
 {
 #if defined(USE_VECTORS)
+	//For each element in vector
 	for(LWM2M_Object& o : objects_vector)
 	{
 		if (o.getObject_id() == object_id)
@@ -645,7 +661,8 @@ bool LWM2M_Client::object_exists(uint16_t object_id)
 bool LWM2M_Client::object_exists(uint16_t object_id, uint16_t instance_id)
 {
 #if defined(USE_VECTORS)
-	for (LWM2M_Object o : objects_vector)
+	//For each element in vector
+	for (LWM2M_Object& o : objects_vector)
 	{
 		if (o.getObject_id() == object_id && o.getInstance_id() == instance_id)
 			return true;
@@ -664,29 +681,37 @@ bool LWM2M_Client::object_exists(uint16_t object_id, uint16_t instance_id)
 
 bool LWM2M_Client::check_URI(URI_Path_t* uri)
 {
+	//If Invalid URI depth
 	if (uri->path_depth == 0 || (uri->path_depth > 4))
 	{
 		return false;
 	}
 
+	//URI points to object
 	if (uri->path_depth >= 1)
 	{
 		if (!object_exists(uri->obj_id))  return false;
 	}
+
+	//URI points to instance
 	if (uri->path_depth >= 2)
 	{
 		if (!object_exists(uri->obj_id, uri->instance_id))  return false;
 	}
+
+	//URI points to resource
 	if (uri->path_depth >= 3)
 	{
 		if (!getObject(uri->obj_id, uri->instance_id).resource_exists(uri->resource_id))  return false;
 	}
 
+	//URI points to a value within array-type resource
 	if (uri->path_depth == 4)
 	{
 		if (!getObject(uri->obj_id, uri->instance_id).getResource(uri->resource_id).value_exists(uri->multi_level_id))  return false;
 	}
 
+	//At this point entity exists
 	return true;
 }
 
