@@ -1,5 +1,9 @@
 # Diploma Thesis LWM2M Library
 ## BUT - Brno University of Technology
+
+[![university](https://img.shields.io/badge/university-Brno%20University%20of%20Technology-red.svg)](https://www.vutbr.cz/en/)
+[![faculty](https://img.shields.io/badge/faculty-Faculty%20of%20Electrical%20Engineering%20and%20Communication-blue.svg)](https://www.fekt.vutbr.cz/)
+
 This is the repository for a final stretch of diploma thesis for BUT Telecommunications study programme.
 Topic of the thesis is Laboratory demonstrator for LPWA utilizing LWM2M protocol. Library is written in C++ with respect to the modern CPU constrains, therefore features such as polymorphism, dynamic casting or templates are not used.
 
