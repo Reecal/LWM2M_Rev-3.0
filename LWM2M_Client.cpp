@@ -4,7 +4,17 @@
 #include <string.h>
 #include "Logger_xdvora2g.h"
 
-
+//-------------------------GLOBAL TODO's-----------------------
+//TODO Change way objects are defined -> Use some kind of template for each object with default values that can be used in case of object creation via server
+//TODO Change variables system within resource to use single value type (void* ?)
+//TODO Get rid of all string dependencies - use char pointers or arrays instead
+//TODO Finish Bootstrap interface
+//TODO Rework observe tags and all remaining attributes
+//TODO Change Observe Tag holding structure to vector
+//TODO Simplify observe routinge checks
+//TODO Design a PCB to test the library
+//TODO Rewrite library to C language
+//----------------------------------------------------------------------
 
 #define LOG_VERBOSITY 3
 
@@ -720,7 +730,6 @@ LWM2M_Object& LWM2M_Client::getObject(uint16_t object_id, uint8_t instance_id)
  *	INPUT  : c - Coap message struct
  *
  */
-
 void LWM2M_Client::registrationInterfaceHandle(CoAP_message_t* c)
 {
 	
