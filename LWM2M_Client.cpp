@@ -6,6 +6,7 @@
 
 //-------------------------GLOBAL TODO's-----------------------
 //TODO Change way objects are defined -> Use some kind of template for each object with default values that can be used in case of object creation via server
+//TODO Optimize memory usage
 //TODO Change variables system within resource to use single value type (void* ?)
 //TODO Get rid of all string dependencies - use char pointers or arrays instead
 //TODO Finish Bootstrap interface
